@@ -1,0 +1,385 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap");
+
+/* ─── RESET ─── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ─── CARD EXPORT (unchanged) ─── */
+#export-card {
+  width: 1080px;
+  height: 1350px;
+  font-family: "Hind Siliguri", "Noto Sans Bengali", sans-serif;
+}
+
+/* ─── BODY ─── */
+body {
+  background: #f0f2f5;
+  font-family: "Inter", "Hind Siliguri", "Noto Sans Bengali", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+  color: #111827;
+}
+
+/* ─── LAYOUT ─── */
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.editor {
+  width: 360px;
+  min-width: 360px;
+
+  height: 100vh;
+
+  overflow-y: auto;
+
+  background: #fff;
+
+  border-right: 1px solid #e5e7eb;
+
+  display: flex;
+
+  flex-direction: column;
+}
+
+/* Panel header bar */
+.editor::before {
+  content: "";
+  display: block;
+  height: 4px;
+  background: linear-gradient(90deg, #e63946, #ff7b00);
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #111827;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #ffffff;
+}
+
+/* ─── INNER SCROLL AREA ─── */
+.editor > .generate-btn {
+  margin-top: 4px;
+}
+
+/* ─── INPUT GROUPS ─── */
+.group {
+  margin-bottom: 16px;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.group label {
+  display: block;
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
+}
+
+/* ─── INPUTS ─── */
+.editor input,
+.editor select,
+.editor textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #111827;
+  outline: none;
+  font-family: "Inter", "Hind Siliguri", "Noto Sans Bengali", sans-serif;
+  font-size: 13.5px;
+  line-height: 1.5;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
+}
+
+.editor input:focus,
+.editor select:focus,
+.editor textarea:focus {
+  border-color: #e63946;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
+}
+
+.editor input::placeholder,
+.editor textarea::placeholder {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.editor textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+/* color picker special treatment */
+.editor input[type="color"] {
+  height: 40px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+/* ─── GENERATE BUTTON ─── */
+.generate-btn {
+  display: block;
+  width: calc(100% - 48px);
+  margin: 0 24px 20px;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e63946 0%, #ff7b00 100%);
+  color: #ffffff;
+  font-family: "Inter", sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    opacity 0.2s,
+    transform 0.15s,
+    box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+}
+
+.generate-btn:hover:not(:disabled) {
+  opacity: 0.93;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(230, 57, 70, 0.38);
+}
+
+.generate-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ─── RIGHT PANEL ─── */
+.preview {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  background: #f0f2f5;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 20px;
+
+  min-height: 100vh;
+}
+
+/* ─── SPACER ─── */
+.preview-spacer {
+  flex: 1;
+  min-height: 50px;
+}
+
+/* ─── CARD ZOOM ─── */
+.preview-frame {
+  transform: scale(0.62);
+
+  transform-origin: top center;
+
+  margin-bottom: -38%;
+
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+
+  border-radius: 12px;
+
+  overflow: hidden;
+
+  flex-shrink: 0;
+}
+
+/* ─── DOWNLOAD BUTTON ─── */
+.download-btn {
+  padding: 12px 36px;
+  background: #1877f2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.download-btn:hover {
+  background: #1f2937;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
+}
+
+.download-btn:active {
+  transform: translateY(0);
+}
+
+/* ─── ACTION BUTTONS ─── */
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ─── HEADLINE ALIGNMENT BUTTONS ─── */
+
+.alignment-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.alignment-buttons button {
+  width: 42px;
+  height: 36px;
+
+  border: 1px solid #ddd;
+
+  background: white;
+
+  cursor: pointer;
+
+  border-radius: 6px;
+
+  font-size: 18px;
+
+  transition: all 0.2s ease;
+}
+
+.alignment-buttons button:hover {
+  background: #f3f4f6;
+}
+
+.alignment-buttons button.active {
+  background: #ff0000;
+
+  color: white;
+
+  border-color: #ff0000;
+}
+
+.facebook-btn {
+  padding: 12px 36px;
+  background: #1877f2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.facebook-btn:hover {
+  background: #145dbf;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
+}
+
+.facebook-btn:active {
+  transform: translateY(0);
+}
+
+/* ─── SCROLLBAR (left panel) ─── */
+.editor::-webkit-scrollbar {
+  width: 5px;
+}
+.editor::-webkit-scrollbar-track {
+  background: transparent;
+}
+.editor::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 99px;
+}
+.editor::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 900px) {
+  .app-container {
+    flex-direction: column;
+
+    overflow: auto;
+  }
+
+  .editor {
+    width: 100%;
+
+    min-width: 0;
+
+    height: auto;
+
+    max-height: none;
+
+    border-right: none;
+
+    border-bottom: 1px solid #ddd;
+  }
+
+  .preview {
+    min-height: 700px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+  .editor {
+    width: 100%;
+  }
+
+  .preview {
+    padding: 10px;
+  }
+
+  .preview-frame {
+    transform-origin: top center;
+
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    flex-shrink: 0;
+  }
+}
+
+.preview-scale-wrapper {
+  transform: scale(0.62);
+
+  transform-origin: top center;
+}
