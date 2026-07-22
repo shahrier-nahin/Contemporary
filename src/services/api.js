@@ -49,7 +49,7 @@ export async function login(email, password) {
   return data;
 }
 
-export async function generateCard(articleUrl) {
+export async function generateCard(articleUrl, panel) {
   const response = await fetch(`${BASE_URL}/generate-card`, {
     method: "POST",
 
@@ -58,7 +58,8 @@ export async function generateCard(articleUrl) {
     },
 
     body: JSON.stringify({
-      articleUrl
+      articleUrl,
+      panel,
     }),
   });
 

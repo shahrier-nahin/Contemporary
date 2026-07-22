@@ -25,7 +25,7 @@ export default function Editor({ state, setState, onLogout }) {
 
       setLoadingRumor(true);
 
-      const data = await generateCard(state.rumorArticleUrl);
+      const data = await generateCard(state.rumorArticleUrl, "rumor");
 
       setState((prev) => ({
         ...prev,
@@ -57,7 +57,7 @@ export default function Editor({ state, setState, onLogout }) {
 
       setLoadingFact(true);
 
-      const data = await generateCard(state.factArticleUrl);
+      const data = await generateCard(state.factArticleUrl, "fact");
 
       setState((prev) => ({
         ...prev,
@@ -336,20 +336,33 @@ export default function Editor({ state, setState, onLogout }) {
         />
       </div>
 
-      <History
-        onSelectCard={(card) => {
-          setState((prev) => ({
-            ...prev,
-            rumorTitle: card.headline,
-            rumorSummary: card.summary,
-            hashtags: card.hashtags,
-            rumorArticleUrl: card.article_url,
-            rumorImage: card.image_url,
-            rumorArticleImage: card.image_url,
-            source: card.source,
-          }));
-        }}
-      />
+<History
+  onSelectCard={(card) => {
+    setState((prev) => ({
+      ...prev,
+      headline: card.headline || prev.headline,
+
+      // Rumor panel
+      rumorTitle: card.rumor_title || "",
+      rumorSummary: card.rumor_summary || "",
+      rumorArticleUrl: card.rumor_article_url || "",
+      rumorImage: card.rumor_image_url || "",
+      rumorArticleImage: card.rumor_image_url || "",
+      rumorVerdictType: card.rumor_verdict_type || "Rumor",
+      rumorLabel: card.rumor_label || "",
+
+      // Fact panel
+      factTitle: card.fact_title || "",
+      factSummary: card.fact_summary || "",
+      factArticleUrl: card.fact_article_url || "",
+      factImage: card.fact_image_url || "",
+      factArticleImage: card.fact_image_url || "",
+      factLabel: card.fact_label || "",
+
+      source: card.source || prev.source,
+    }));
+  }}
+/>
 
       <div
         style={{
