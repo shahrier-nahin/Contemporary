@@ -71,19 +71,18 @@ const upload = multer({
 });
 
 // =============================
-// GROQ API CONFIGURATION (Replaces OpenAI)
+// GROQ API CONFIGURATION
 // =============================
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-// Helper function to call Groq API
 async function callGroq(messages, temperature = 0.4) {
   try {
     const response = await axios.post(
       GROQ_API_URL,
       {
-        model: "llama-3.3-70b-versatile", // or "llama3-70b-8192" or "gemma2-9b-it"
+        model: "openai/gpt-oss-120b",
         messages: messages,
         temperature: temperature,
         response_format: { type: "json_object" }
@@ -215,49 +214,10 @@ app.get("/proxy-image", async (req, res) => {
 });
 
 // ==========================================================
-// SHARED: Scrape article + generate Bengali headline/summary
-// Used by /generate-card for both the rumor panel and the
-// fact panel — panel-agnostic, just takes a URL.
+// SHARED: Bangla date formatting
 // ==========================================================
-async function scrapeAndGenerate(articleUrl) {
-  const cleanUrl = articleUrl.split("#")[0];
-  const hostname = new URL(cleanUrl).hostname;
-
-  const response = await axios.get(cleanUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-    },
-    timeout: 15000
-  });
-
-  const html = response.data;
-  const $ = cheerio.load(html);
-
-  // TITLE
-  const title = $("h1").first().text().trim();
-
-  // CONTENT
-  const content = $("article p")
-    .map((i, el) => $(el).text())
-    .get()
-    .join("\n\n");
-
-  // IMAGE EXTRACTION
-  let image =
-    $('meta[property="og:image"]').attr("content") ||
-    $('meta[name="twitter:image"]').attr("content") ||
-    $("article img").first().attr("src") ||
-    "";
-
-  // Fix relative image URLs
-  if (image && image.startsWith("/")) {
-    const base = new URL(articleUrl).origin;
-    image = base + image;
-  }
-
-  // DATE (card generation date)
+function formatBanglaDate() {
   const date = new Date();
-  console.log("CARD GENERATED AT:", date.toISOString());
 
   const banglaMonths = [
     "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
@@ -279,21 +239,68 @@ async function scrapeAndGenerate(articleUrl) {
   const day = convertToBanglaNumber(date.getDate());
   const month = banglaMonths[date.getMonth()];
   const year = convertToBanglaNumber(date.getFullYear());
-  const formattedDate = `${day} ${month} ${year}`;
 
-  console.log("FORMATTED DATE:", formattedDate);
+  return `${day} ${month} ${year}`;
+}
 
-  // SOURCE
-  const source = new URL(articleUrl).hostname.replace("www.", "");
+function proxiedImage(image) {
+  if (!image) return "";
+  const backendUrl = process.env.BACKEND_URL || "http://localhost:3000";
+  return `${backendUrl}/proxy-image?url=${encodeURIComponent(image)}`;
+}
+
+// ==========================================================
+// SHARED: Scrape a single article (no AI call here)
+// ==========================================================
+async function scrapeArticle(articleUrl) {
+  const cleanUrl = articleUrl.split("#")[0];
+
+  console.log("Fetching:", cleanUrl);
+
+  const response = await axios.get(cleanUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    },
+    timeout: 15000
+  });
+
+  const html = response.data;
+  const $ = cheerio.load(html);
+
+  const title = $("h1").first().text().trim();
+
+  const content = $("article p")
+    .map((i, el) => $(el).text())
+    .get()
+    .join("\n\n");
+
+  let image =
+    $('meta[property="og:image"]').attr("content") ||
+    $('meta[name="twitter:image"]').attr("content") ||
+    $("article img").first().attr("src") ||
+    "";
+
+  if (image && image.startsWith("/")) {
+    const base = new URL(cleanUrl).origin;
+    image = base + image;
+  }
+
+  const source = new URL(cleanUrl).hostname.replace("www.", "");
 
   console.log("TITLE:", title);
   console.log("IMAGE:", image);
-  console.log("DATE:", date);
 
-  // =============================
-  // GROQ API CALL (Replaces OpenAI)
-  // =============================
-  
+  return { title, content, image, source };
+}
+
+// ==========================================================
+// SHARED: Legacy single-article scrape + AI
+// (Kept for backward compatibility with /generate-card.
+//  Not used by the new combined flow.)
+// ==========================================================
+async function scrapeAndGenerate(articleUrl) {
+  const data = await scrapeArticle(articleUrl);
+
   const messages = [
     {
       role: "system",
@@ -355,60 +362,265 @@ Return ONLY valid JSON:
       content: `
 English title:
 
-${title}
+${data.title}
 
 
 Article:
 
-${content.substring(0, 5000)}
+${data.content.substring(0, 5000)}
 `
     }
   ];
 
   const aiText = await callGroq(messages, 0.4);
-  
   const aiData = JSON.parse(aiText);
 
-  const banglaHeadline = aiData.headline;
-  const summary = aiData.summary;
-  const hashtags = aiData.hashtags;
-
-  // FINAL IMAGE URL FOR REACT
-  let finalImage = image;
-
-  if (image) {
-    const backendUrl = process.env.BACKEND_URL || "http://localhost:3000";
-    finalImage = `${backendUrl}/proxy-image?url=${encodeURIComponent(image)}`;
-  }
-
   return {
-    headline: banglaHeadline,
-    summary,
-    hashtags,
-    image_url: finalImage,
-    date: formattedDate,
-    source
+    headline: aiData.headline,
+    summary: aiData.summary,
+    hashtags: aiData.hashtags,
+    image_url: proxiedImage(data.image),
+    date: formatBanglaDate(),
+    source: data.source
   };
 }
 
 // ==========================================================
-// /generate-card
+// Build messages for the combined fact-check AI call
+// ==========================================================
+function buildFactCheckMessages(rumorData, factData) {
+  return [
+    {
+      role: "system",
+      content: `
+You are a senior Bengali fact-check editor working for a professional newsroom.
+
+Your task is to read and understand multiple English news articles about the same topic and produce an original Bengali fact-check report.
+
+Do NOT translate the English articles sentence by sentence.
+
+Instead:
+1. Read every source carefully.
+2. Understand the complete event.
+3. Identify the central claim.
+4. Compare the information across the sources.
+5. Determine the most reliable facts based only on the provided articles.
+6. Write a completely new Bengali report in a professional newsroom style.
+
+Editorial Rules
+
+Headline
+- Write one natural Bengali headline.
+- The headline must communicate the investigation's main finding or contradiction.
+- Never use clickbait.
+- Never translate the English headline.
+- Write like a professional Bengali fact-check newsroom.
+- Keep it concise (approximately 8-15 words).
+
+Rumor Title
+- Write a short title describing only the viral claim.
+- Do NOT include the verdict.
+- Keep it within 4-8 words.
+
+Rumor Summary
+- Explain what people are claiming.
+- Do not evaluate the claim.
+- Write approximately 30-50 words.
+- Keep it factual and neutral.
+
+Fact Title
+- Write a short title describing the verified finding.
+- It should directly answer or refute the claim.
+- Keep it within 5-10 words.
+
+Fact Summary
+- Write a professional Bengali fact-check report.
+- Length: 30-50 words.
+- Explain:
+  • what the claim is,
+  • what the investigation found,
+  • the supporting evidence,
+  • the final conclusion.
+- Write naturally.
+- Do not repeat the same sentence structure.
+- Use short paragraphs and readable newsroom language.
+- Do not invent facts.
+- If the provided sources do not support a claim, clearly state that sufficient evidence is unavailable.
+
+Facebook Caption
+- Write a Facebook-friendly caption.
+- Length: approximately 50-60 words.
+- Start with a strong opening that summarizes the investigation.
+- Briefly explain the key finding.
+- Encourage readers to view the fact-check without using sensational language.
+- Do not simply copy the Fact Summary.
+
+Language
+- Use fluent, natural Bengali.
+- Never produce machine-translated Bengali.
+- Think in Bengali before writing.
+- Use professional newsroom language.
+- Keep common international terms in Bengali transliteration when appropriate.
+
+Examples:
+Facebook → ফেসবুক
+YouTube → ইউটিউব
+WhatsApp → হোয়াটসঅ্যাপ
+AI → এআই
+Video → ভিডিও
+Photo → ছবি
+Post → পোস্ট
+Claim → দাবি
+Fact Check → ফ্যাক্ট চেক
+Screenshot → স্ক্রিনশট
+Website → ওয়েবসাইট
+Organization → সংস্থা
+Official → অফিসিয়াল
+
+Writing Rules
+- Never hallucinate.
+- Never add information that is not supported by the provided sources.
+- Never speculate.
+- Never include your reasoning.
+- Never mention that you compared articles.
+- Produce original Bengali writing instead of translation.
+
+Before generating the response, internally verify:
+- Does the headline accurately represent the verified finding?
+- Does the rumor section only describe the claim?
+- Does the fact section clearly explain the investigation?
+- Is every statement supported by the provided sources?
+- Is the Bengali natural and suitable for publication?
+
+Generate 6-7 relevant hashtags.
+- Hashtags must be in English.
+- Use topic-related hashtags only.
+- Do not use Bengali hashtags.
+
+Return ONLY valid JSON.
+{
+  "headline": "",
+  "rumorTitle": "",
+  "rumorSummary": "",
+  "factTitle": "",
+  "factSummary": "",
+  "facebookCaption": "",
+  "hashtags": []
+}
+`
+    },
+    {
+      role: "user",
+      content: `
+SOURCE 1 — Rumor/Claim article:
+
+Title: ${rumorData.title}
+
+Content:
+${rumorData.content.substring(0, 4000)}
+
+
+SOURCE 2 — Fact-check/Verified article:
+
+Title: ${factData.title}
+
+Content:
+${factData.content.substring(0, 4000)}
+`
+    }
+  ];
+}
+
+// ==========================================================
+// /generate-factcheck
+// Body: { rumorArticleUrl, factArticleUrl }
+// Scrapes BOTH articles, runs ONE combined AI call, returns
+// everything needed for both panels + the shared headline.
+// ==========================================================
+app.post("/generate-factcheck", async (req, res) => {
+  const today = new Date().toISOString().split("T")[0];
+
+  let usage = db.prepare(`
+    SELECT * FROM daily_usage WHERE usage_date = ?
+  `).get(today);
+
+  if (!usage) {
+    db.prepare(`
+      INSERT INTO daily_usage (usage_date, count) VALUES (?, ?)
+    `).run(today, 0);
+    usage = { usage_date: today, count: 0 };
+  }
+
+  if (usage.count >= DAILY_LIMIT) {
+    return res.status(429).json({
+      error: "Daily limit reached.",
+      remaining: 0
+    });
+  }
+
+  try {
+    const { rumorArticleUrl, factArticleUrl } = req.body;
+
+    if (!rumorArticleUrl || !factArticleUrl) {
+      return res.status(400).json({
+        error: "Both rumorArticleUrl and factArticleUrl are required"
+      });
+    }
+
+    const [rumorData, factData] = await Promise.all([
+      scrapeArticle(rumorArticleUrl),
+      scrapeArticle(factArticleUrl)
+    ]);
+
+    const messages = buildFactCheckMessages(rumorData, factData);
+    const aiText = await callGroq(messages, 0.4);
+    const aiData = JSON.parse(aiText);
+
+    db.prepare(`
+      UPDATE daily_usage SET count = count + 1 WHERE usage_date = ?
+    `).run(today);
+
+    const updatedUsage = db.prepare(`
+      SELECT count FROM daily_usage WHERE usage_date = ?
+    `).get(today);
+
+    const remaining = DAILY_LIMIT - updatedUsage.count;
+
+    res.json({
+      headline: aiData.headline,
+      rumorTitle: aiData.rumorTitle,
+      rumorSummary: aiData.rumorSummary,
+      factTitle: aiData.factTitle,
+      factSummary: aiData.factSummary,
+      facebookCaption: aiData.facebookCaption,
+      hashtags: aiData.hashtags,
+      rumorImage: proxiedImage(rumorData.image),
+      factImage: proxiedImage(factData.image),
+      date: formatBanglaDate(),
+      source: factData.source,
+      remaining
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================================
+// /generate-card  (LEGACY — single article, single panel)
 // Body: { articleUrl, panel }  — panel is "rumor" or "fact"
-// Scrapes + runs AI, counts against the daily limit.
-// Does NOT write to card_history — that happens on
-// /save-card-history, once both panels are ready.
+// Kept for backward compatibility. Not used by the new
+// single-button combined flow.
 // ==========================================================
 app.post("/generate-card", async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
 
-  // Check today's usage
   let usage = db.prepare(`
     SELECT *
     FROM daily_usage
     WHERE usage_date = ?
   `).get(today);
 
-  // First generation today
   if (!usage) {
     db.prepare(`
     INSERT INTO daily_usage (usage_date, count)
@@ -421,7 +633,6 @@ app.post("/generate-card", async (req, res) => {
     };
   }
 
-  // Stop if daily limit reached
   if (usage.count >= DAILY_LIMIT) {
     return res.status(429).json({
       error: "Daily limit reached.",
@@ -446,14 +657,12 @@ app.post("/generate-card", async (req, res) => {
 
     const result = await scrapeAndGenerate(articleUrl);
 
-    // Increase today's usage
     db.prepare(`
     UPDATE daily_usage
     SET count = count + 1
     WHERE usage_date = ?
     `).run(today);
 
-    // Read updated count
     const updatedUsage = db.prepare(`
     SELECT count
     FROM daily_usage
@@ -477,12 +686,13 @@ app.post("/generate-card", async (req, res) => {
 
 // ==========================================================
 // /save-card-history
-// Called once the user is happy with both panels — saves the
-// full rumor+fact pair as a single history record.
+// Inserts a new row on first save (no id), then updates that
+// same row on every subsequent generate for the current card.
 // ==========================================================
 app.post("/save-card-history", (req, res) => {
   try {
     const {
+      id,
       headline,
       rumorTitle,
       rumorSummary,
@@ -498,7 +708,28 @@ app.post("/save-card-history", (req, res) => {
       source
     } = req.body;
 
-    db.prepare(`
+    if (id) {
+      db.prepare(`
+        UPDATE card_history SET
+          headline = ?,
+          rumor_title = ?, rumor_summary = ?, rumor_article_url = ?, rumor_image_url = ?,
+          rumor_verdict_type = ?, rumor_label = ?,
+          fact_title = ?, fact_summary = ?, fact_article_url = ?, fact_image_url = ?, fact_label = ?,
+          source = ?
+        WHERE id = ?
+      `).run(
+        headline || "",
+        rumorTitle || "", rumorSummary || "", rumorArticleUrl || "", rumorImage || "",
+        rumorVerdictType || "", rumorLabel || "",
+        factTitle || "", factSummary || "", factArticleUrl || "", factImage || "", factLabel || "",
+        source || "",
+        id
+      );
+
+      return res.json({ success: true, id });
+    }
+
+    const result = db.prepare(`
       INSERT INTO card_history (
         user_email, headline,
         rumor_title, rumor_summary, rumor_article_url, rumor_image_url, rumor_verdict_type, rumor_label,
@@ -509,27 +740,17 @@ app.post("/save-card-history", (req, res) => {
     `).run(
       ADMIN_EMAIL,
       headline || "",
-      rumorTitle || "",
-      rumorSummary || "",
-      rumorArticleUrl || "",
-      rumorImage || "",
-      rumorVerdictType || "",
-      rumorLabel || "",
-      factTitle || "",
-      factSummary || "",
-      factArticleUrl || "",
-      factImage || "",
-      factLabel || "",
+      rumorTitle || "", rumorSummary || "", rumorArticleUrl || "", rumorImage || "",
+      rumorVerdictType || "", rumorLabel || "",
+      factTitle || "", factSummary || "", factArticleUrl || "", factImage || "", factLabel || "",
       source || "",
       new Date().toISOString()
     );
 
-    res.json({ success: true });
+    res.json({ success: true, id: result.lastInsertRowid });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      error: error.message
-    });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -580,7 +801,6 @@ app.post("/post-facebook", upload.single("image"), async (req, res) => {
       `${summary}\n\n${hashtags}`
     );
 
-    // ✅ Send the token as a form field
     form.append(
       "access_token",
       process.env.FACEBOOK_PAGE_ACCESS_TOKEN

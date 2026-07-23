@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { getCardHistory } from "../services/api";
 
-export default function History({ onSelectCard }) {
+export default function History({ onSelectCard, refreshKey }) {
   const [cards, setCards] = useState([]);
 
   useEffect(() => {
     loadHistory();
-  }, []);
+  }, [refreshKey]);
 
   async function loadHistory() {
     try {

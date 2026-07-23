@@ -15,11 +15,14 @@ export const TEMPLATE_CONFIG = {
       "#E63946",
 
       stamps: {
-      Fact: "https://res.cloudinary.com/ek511pie/image/upload/v1784632007/Fact_ggmise.png",
-      Rumor: "https://res.cloudinary.com/ek511pie/image/upload/v1784632007/Rumor_sncc22.png",
+      Fact: "https://res.cloudinary.com/ek511pie/image/upload/v1784717023/Correct_vrbnel.png",
+      //Fact: "https://res.cloudinary.com/ek511pie/image/upload/v1784632007/Fact_ggmise.png",
+      Rumor: "https://res.cloudinary.com/ek511pie/image/upload/v1784717023/Wrong_hjvwfu.png",
+      //Rumor: "https://res.cloudinary.com/ek511pie/image/upload/v1784632007/Rumor_sncc22.png",
       False: "https://res.cloudinary.com/ek511pie/image/upload/v1784632007/False_News_hmitda.png",
       Misleading: "https://res.cloudinary.com/ek511pie/image/upload/v1784632007/Misleading_xdqywk.png",
       "AI Generated": "https://res.cloudinary.com/ek511pie/image/upload/v1784632007/AI_Generated_hvvgtc.png",
+      
     }
 
   }

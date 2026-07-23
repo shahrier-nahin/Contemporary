@@ -1,10 +1,10 @@
-import { generateCard } from "../services/api";
+import { generateFactCheck, saveCardHistory } from "../services/api";
 import { useState } from "react";
 import History from "./History";
 
 export default function Editor({ state, setState, onLogout }) {
-  const [loadingRumor, setLoadingRumor] = useState(false);
-  const [loadingFact, setLoadingFact] = useState(false);
+  const [loadingGenerate, setLoadingGenerate] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   const update = (key, value) => {
     setState((prev) => ({
@@ -14,66 +14,80 @@ export default function Editor({ state, setState, onLogout }) {
   };
 
   // ===========================
-  // Generate — Rumor Article
+  // Auto-save to History
   // ===========================
-  async function handleGenerateRumor() {
+  async function autoSaveHistory(updatedFields) {
     try {
-      if (!state.rumorArticleUrl) {
-        alert("Please enter the rumor article URL");
-        return;
-      }
+      const merged = { ...state, ...updatedFields };
 
-      setLoadingRumor(true);
+      const result = await saveCardHistory({
+        id: merged.historyId || undefined,
+        headline: merged.headline,
+        rumorTitle: merged.rumorTitle,
+        rumorSummary: merged.rumorSummary,
+        rumorArticleUrl: merged.rumorArticleUrl,
+        rumorImage: merged.rumorImage,
+        rumorVerdictType: merged.rumorVerdictType,
+        rumorLabel: merged.rumorLabel,
+        factTitle: merged.factTitle,
+        factSummary: merged.factSummary,
+        factArticleUrl: merged.factArticleUrl,
+        factImage: merged.factImage,
+        factLabel: merged.factLabel,
+        source: merged.source,
+      });
 
-      const data = await generateCard(state.rumorArticleUrl, "rumor");
-
-      setState((prev) => ({
-        ...prev,
-        rumorTitle: data.headline || prev.rumorTitle,
-        rumorSummary: data.summary || prev.rumorSummary,
-        rumorImage: data.image_url || prev.rumorImage,
-        rumorArticleImage: data.image_url || prev.rumorArticleImage,
-        source: data.source || prev.source,
-        date: data.date || prev.date,
-        remaining: data.remaining ?? prev.remaining,
-      }));
+      setState((prev) => ({ ...prev, historyId: result.id }));
+      setHistoryRefreshKey((k) => k + 1);
     } catch (err) {
-      console.error(err);
-      alert("Rumor panel generation failed");
-    } finally {
-      setLoadingRumor(false);
+      console.error("Auto-save to history failed:", err);
     }
   }
 
   // ===========================
-  // Generate — Fact Article
+  // Generate — BOTH panels in one call
   // ===========================
-  async function handleGenerateFact() {
+  async function handleGenerate() {
     try {
-      if (!state.factArticleUrl) {
-        alert("Please enter the fact-check article URL");
+      if (!state.rumorArticleUrl || !state.factArticleUrl) {
+        alert("Please enter both the rumor article URL and the fact-check article URL");
         return;
       }
 
-      setLoadingFact(true);
+      setLoadingGenerate(true);
 
-      const data = await generateCard(state.factArticleUrl, "fact");
+      const data = await generateFactCheck(
+        state.rumorArticleUrl,
+        state.factArticleUrl
+      );
 
-      setState((prev) => ({
-        ...prev,
-        factTitle: data.headline || prev.factTitle,
-        factSummary: data.summary || prev.factSummary,
-        factImage: data.image_url || prev.factImage,
-        factArticleImage: data.image_url || prev.factArticleImage,
-        source: data.source || prev.source,
-        date: data.date || prev.date,
-        remaining: data.remaining ?? prev.remaining,
-      }));
+      const updatedFields = {
+        headline: data.headline || state.headline,
+        rumorTitle: data.rumorTitle || state.rumorTitle,
+        rumorSummary: data.rumorSummary || state.rumorSummary,
+        rumorImage: data.rumorImage || state.rumorImage,
+        rumorArticleImage: data.rumorImage || state.rumorArticleImage,
+        factTitle: data.factTitle || state.factTitle,
+        factSummary: data.factSummary || state.factSummary,
+        factImage: data.factImage || state.factImage,
+        factArticleImage: data.factImage || state.factArticleImage,
+        facebookCaption: data.facebookCaption || state.facebookCaption,
+        hashtags: Array.isArray(data.hashtags)
+          ? data.hashtags.join(" ")
+          : state.hashtags,
+        source: data.source || state.source,
+        date: data.date || state.date,
+        remaining: data.remaining ?? state.remaining,
+      };
+
+      setState((prev) => ({ ...prev, ...updatedFields }));
+
+      await autoSaveHistory(updatedFields);
     } catch (err) {
       console.error(err);
-      alert("Fact panel generation failed");
+      alert("Generation failed");
     } finally {
-      setLoadingFact(false);
+      setLoadingGenerate(false);
     }
   }
 
@@ -120,7 +134,7 @@ export default function Editor({ state, setState, onLogout }) {
           textAlign: "center",
         }}
       >
-        Remaining Today: {state.remaining} / {state.dailyLimit || 14}
+        Remaining Today: {state.remaining} / {state.dailyLimit || 100}
       </div>
 
       <div className="group">
@@ -130,6 +144,49 @@ export default function Editor({ state, setState, onLogout }) {
           onChange={(e) => update("headline", e.target.value)}
         />
       </div>
+
+      {/* ========================= */}
+      {/* ARTICLE URLS + SINGLE GENERATE BUTTON */}
+      {/* ========================= */}
+      <div
+        style={{
+          margin: "24px 24px 4px",
+          paddingTop: 16,
+          borderTop: "2px solid #eee",
+          fontWeight: 800,
+          fontSize: 15,
+          color: "#333",
+          letterSpacing: 0.5,
+        }}
+      >
+        SOURCE ARTICLES
+      </div>
+
+      <div className="group">
+        <label>Rumor / Claim Article URL</label>
+        <input
+          value={state.rumorArticleUrl || ""}
+          onChange={(e) => update("rumorArticleUrl", e.target.value)}
+          placeholder="Paste the rumor/claim article link"
+        />
+      </div>
+
+      <div className="group">
+        <label>Fact-Check Article URL</label>
+        <input
+          value={state.factArticleUrl || ""}
+          onChange={(e) => update("factArticleUrl", e.target.value)}
+          placeholder="Paste the verified/fact-check article link"
+        />
+      </div>
+
+      <button
+        className="generate-btn"
+        onClick={handleGenerate}
+        disabled={loadingGenerate}
+      >
+        {loadingGenerate ? "Generating..." : "✨ Generate Fact Check"}
+      </button>
 
       {/* ========================= */}
       {/* RUMOR PANEL */}
@@ -147,23 +204,6 @@ export default function Editor({ state, setState, onLogout }) {
       >
         RUMOR PANEL
       </div>
-
-      <div className="group">
-        <label>Rumor Article URL</label>
-        <input
-          value={state.rumorArticleUrl || ""}
-          onChange={(e) => update("rumorArticleUrl", e.target.value)}
-          placeholder="Paste the rumor/claim article link"
-        />
-      </div>
-
-      <button
-        className="generate-btn"
-        onClick={handleGenerateRumor}
-        disabled={loadingRumor}
-      >
-        {loadingRumor ? "Generating..." : "✨ Generate From Rumor Article"}
-      </button>
 
       <div className="group">
         <label>Rumor Panel Stamp</label>
@@ -196,7 +236,7 @@ export default function Editor({ state, setState, onLogout }) {
           rows="5"
         />
       </div>
-
+{/*
       <div className="group">
         <label>Rumor Caption (bottom row)</label>
         <input
@@ -204,8 +244,8 @@ export default function Editor({ state, setState, onLogout }) {
           onChange={(e) => update("rumorLabel", e.target.value)}
           placeholder="e.g. Global Market Collapse Rumors Spread"
         />
-      </div>
-
+      </div> 
+*/}
       <div className="group">
         <label>Upload Rumor Panel Image</label>
         <input type="file" accept="image/*" onChange={handleRumorImageUpload} />
@@ -220,12 +260,23 @@ export default function Editor({ state, setState, onLogout }) {
         Restore Rumor Article Image
       </button>
 
+      {/* Rumor panel image controls */}
+      <ImageControls
+        label="Rumor"
+        opacity={state.rumorImageOpacity ?? 60}
+        brightness={state.rumorImageBrightness ?? 100}
+        blur={state.rumorImageBlur ?? 0}
+        onOpacityChange={(v) => update("rumorImageOpacity", v)}
+        onBrightnessChange={(v) => update("rumorImageBrightness", v)}
+        onBlurChange={(v) => update("rumorImageBlur", v)}
+      />
+
       {/* ========================= */}
       {/* FACT PANEL */}
       {/* ========================= */}
       <div
         style={{
-          margin: "8px 24px 4px",
+          margin: "24px 24px 4px",
           paddingTop: 16,
           borderTop: "2px solid #eee",
           fontWeight: 800,
@@ -236,23 +287,6 @@ export default function Editor({ state, setState, onLogout }) {
       >
         FACT PANEL
       </div>
-
-      <div className="group">
-        <label>Fact-Check Article URL</label>
-        <input
-          value={state.factArticleUrl || ""}
-          onChange={(e) => update("factArticleUrl", e.target.value)}
-          placeholder="Paste the verified/fact-check article link"
-        />
-      </div>
-
-      <button
-        className="generate-btn"
-        onClick={handleGenerateFact}
-        disabled={loadingFact}
-      >
-        {loadingFact ? "Generating..." : "✨ Generate From Fact Article"}
-      </button>
 
       <div className="group">
         <label>Fact Title</label>
@@ -271,7 +305,7 @@ export default function Editor({ state, setState, onLogout }) {
           rows="5"
         />
       </div>
-
+{/*
       <div className="group">
         <label>Fact Caption (bottom row)</label>
         <input
@@ -280,7 +314,7 @@ export default function Editor({ state, setState, onLogout }) {
           placeholder="e.g. Markets Experience Modest Growth"
         />
       </div>
-
+*/}
       <div className="group">
         <label>Upload Fact Panel Image</label>
         <input type="file" accept="image/*" onChange={handleFactImageUpload} />
@@ -295,9 +329,55 @@ export default function Editor({ state, setState, onLogout }) {
         Restore Fact Article Image
       </button>
 
+      {/* Fact panel image controls */}
+      <ImageControls
+        label="Fact"
+        opacity={state.factImageOpacity ?? 60}
+        brightness={state.factImageBrightness ?? 100}
+        blur={state.factImageBlur ?? 0}
+        onOpacityChange={(v) => update("factImageOpacity", v)}
+        onBrightnessChange={(v) => update("factImageBrightness", v)}
+        onBlurChange={(v) => update("factImageBlur", v)}
+      />
+
       {/* ========================= */}
       {/* CARD META */}
       {/* ========================= */}
+      
+    <div
+      style={{
+        margin: "24px 24px 4px",
+        paddingTop: 16,
+        borderTop: "2px solid #eee",
+        fontWeight: 800,
+        fontSize: 15,
+        color: "#1877F2", // Meta's Official Blue
+        letterSpacing: 0.5,
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="#1877F2"
+      >
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+      </svg>
+      FACEBOOK POST
+    </div>
+        
+      <div className="group">
+        <label>Caption</label>
+        <textarea
+          value={state.facebookCaption || ""}
+          onChange={(e) => update("facebookCaption", e.target.value)}
+          rows="6"
+          placeholder="Auto-generated caption for Facebook post"
+        />
+      </div>
       <div
         style={{
           margin: "8px 24px 4px",
@@ -309,6 +389,10 @@ export default function Editor({ state, setState, onLogout }) {
           letterSpacing: 0.5,
         }}
       >
+
+
+
+
         CARD INFO
       </div>
 
@@ -336,33 +420,33 @@ export default function Editor({ state, setState, onLogout }) {
         />
       </div>
 
-<History
-  onSelectCard={(card) => {
-    setState((prev) => ({
-      ...prev,
-      headline: card.headline || prev.headline,
+      <History
+        refreshKey={historyRefreshKey}
+        onSelectCard={(card) => {
+          setState((prev) => ({
+            ...prev,
+            historyId: card.id,
+            headline: card.headline || prev.headline,
 
-      // Rumor panel
-      rumorTitle: card.rumor_title || "",
-      rumorSummary: card.rumor_summary || "",
-      rumorArticleUrl: card.rumor_article_url || "",
-      rumorImage: card.rumor_image_url || "",
-      rumorArticleImage: card.rumor_image_url || "",
-      rumorVerdictType: card.rumor_verdict_type || "Rumor",
-      rumorLabel: card.rumor_label || "",
+            rumorTitle: card.rumor_title || "",
+            rumorSummary: card.rumor_summary || "",
+            rumorArticleUrl: card.rumor_article_url || "",
+            rumorImage: card.rumor_image_url || "",
+            rumorArticleImage: card.rumor_image_url || "",
+            rumorVerdictType: card.rumor_verdict_type || "Rumor",
+            rumorLabel: card.rumor_label || "",
 
-      // Fact panel
-      factTitle: card.fact_title || "",
-      factSummary: card.fact_summary || "",
-      factArticleUrl: card.fact_article_url || "",
-      factImage: card.fact_image_url || "",
-      factArticleImage: card.fact_image_url || "",
-      factLabel: card.fact_label || "",
+            factTitle: card.fact_title || "",
+            factSummary: card.fact_summary || "",
+            factArticleUrl: card.fact_article_url || "",
+            factImage: card.fact_image_url || "",
+            factArticleImage: card.fact_image_url || "",
+            factLabel: card.fact_label || "",
 
-      source: card.source || prev.source,
-    }));
-  }}
-/>
+            source: card.source || prev.source,
+          }));
+        }}
+      />
 
       <div
         style={{
@@ -389,6 +473,63 @@ export default function Editor({ state, setState, onLogout }) {
           Logout
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   Reusable Opacity/Brightness/Blur sliders for a panel image
+   ============================================================ */
+function ImageControls({
+  label,
+  opacity,
+  brightness,
+  blur,
+  onOpacityChange,
+  onBrightnessChange,
+  onBlurChange,
+}) {
+  return (
+    <div style={{ margin: "0 24px 20px" }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: "#555", marginBottom: 8 }}>
+        {label} Image Controls
+      </div>
+
+      <label style={{ fontSize: 12, color: "#666" }}>
+        Background Opacity ({opacity}%)
+      </label>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={opacity}
+        onChange={(e) => onOpacityChange(Number(e.target.value))}
+        style={{ width: "100%", marginBottom: 12 }}
+      />
+
+      <label style={{ fontSize: 12, color: "#666" }}>
+        Background Brightness ({brightness}%)
+      </label>
+      <input
+        type="range"
+        min="0"
+        max="200"
+        value={brightness}
+        onChange={(e) => onBrightnessChange(Number(e.target.value))}
+        style={{ width: "100%", marginBottom: 12 }}
+      />
+
+      <label style={{ fontSize: 12, color: "#666" }}>
+        Background Blur ({blur}px)
+      </label>
+      <input
+        type="range"
+        min="0"
+        max="20"
+        value={blur}
+        onChange={(e) => onBlurChange(Number(e.target.value))}
+        style={{ width: "100%" }}
+      />
     </div>
   );
 }

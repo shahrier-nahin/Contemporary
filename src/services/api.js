@@ -110,3 +110,42 @@ export async function postToFacebook(formData) {
     throw new Error(text);
   }
 }
+
+export async function generateFactCheck(rumorArticleUrl, factArticleUrl) {
+  const response = await fetch(`${BASE_URL}/generate-factcheck`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      rumorArticleUrl,
+      factArticleUrl,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Backend error");
+  }
+
+  return data;
+}
+
+export async function saveCardHistory(payload) {
+  const response = await fetch(`${BASE_URL}/save-card-history`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to save card");
+  }
+
+  return data;
+}

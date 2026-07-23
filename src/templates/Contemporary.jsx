@@ -39,7 +39,7 @@ export default function Contemporary({ state, setState }) {
         color: "#111",
         display: "flex",
         flexDirection: "column",
-        padding: "48px 64px 40px",
+        padding: "48px 64px 56px",
         boxSizing: "border-box",
         boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.04)",
       }}
@@ -56,35 +56,29 @@ export default function Contemporary({ state, setState }) {
         }}
       />
 
-      {/* HEADER: LOGOS */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          paddingBottom: 24,
-          borderBottom: "2px solid rgba(13,27,42,0.08)",
-        }}
-      >
-        <img
-          src={config.factCheckLogo}
-          alt="fact-check logo"
-          crossOrigin="anonymous"
-          style={{ height: 72, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" }}
-        />
-        <img
-          src={config.logo}
-          alt="logo"
-          crossOrigin="anonymous"
-          style={{ height: 84, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" }}
-        />
-      </div>
+{/* HEADER: LOGO */}
+<div
+  style={{
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingBottom: 24,
+    borderBottom: "2px solid rgba(13,27,42,0.08)",
+  }}
+>
+  <img
+    src={config.factCheckLogo}
+    alt="fact-check logo"
+    crossOrigin="anonymous"
+    style={{ height: 72, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" }}
+  />
+</div>
 
       {/* TITLE */}
       <div style={{ textAlign: "center", margin: "34px 0 38px" }}>
         <h1
           style={{
-            fontSize: 56,
+            fontSize: 44,
             fontWeight: 800,
             margin: 0,
             color: "#0d1b2a",
@@ -110,10 +104,14 @@ export default function Contemporary({ state, setState }) {
         <FactPanel
           gradient="linear-gradient(160deg, rgba(230,57,70,0.16) 0%, rgba(230,57,70,0.06) 100%)"
           accent="#e63946"
-
+          eyebrowIcon="⚠"
+          eyebrow="দাবীকৃত তথ্য"
           title={state.rumorTitle}
           summary={state.rumorSummary}
           watermarkImage={state.rumorImage}
+          imageOpacity={state.rumorImageOpacity ?? 60}
+          imageBrightness={state.rumorImageBrightness ?? 100}
+          imageBlur={state.rumorImageBlur ?? 0}
           stampSrc={rumorStamp}
           stampPos={rumorBadgePos}
           onStampMove={updateRumorBadgePos}
@@ -122,10 +120,14 @@ export default function Contemporary({ state, setState }) {
         <FactPanel
           gradient="linear-gradient(160deg, rgba(56,176,0,0.16) 0%, rgba(56,176,0,0.06) 100%)"
           accent="#2a9d3f"
-
+          eyebrowIcon="✓"
+          eyebrow="সত্যতা যাচাই"
           title={state.factTitle}
           summary={state.factSummary}
           watermarkImage={state.factImage}
+          imageOpacity={state.factImageOpacity ?? 60}
+          imageBrightness={state.factImageBrightness ?? 100}
+          imageBlur={state.factImageBlur ?? 0}
           stampSrc={factStamp}
           stampPos={factBadgePos}
           onStampMove={updateFactBadgePos}
@@ -133,6 +135,7 @@ export default function Contemporary({ state, setState }) {
       </div>
 
       {/* VERDICT ROW */}
+      {/* 
       <div
         style={{
           display: "flex",
@@ -157,59 +160,62 @@ export default function Contemporary({ state, setState }) {
           isFalse={false}
           caption={`Fact: ${state.factLabel || ""}`}
         />
-      </div>
+      </div> 
+      */}
 
-      {/* FOOTER: DATE + SOURCE */}
-      <div
+    {/* FOOTER: DATE + SOURCE */}
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 34,
+        paddingTop: 22,
+        paddingBottom: 8,
+        borderTop: "2px solid rgba(13,27,42,0.08)",
+        fontSize: 20,
+      }}
+    >
+      <span
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginTop: 30,
-          paddingTop: 20,
-          borderTop: "2px solid rgba(13,27,42,0.08)",
-          fontSize: 22,
-        }}
-      >
-        <span
-          style={{
-            background: "rgba(13,27,42,0.06)",
-            padding: "6px 16px",
-            borderRadius: 999,
-            fontWeight: 600,
-            opacity: 0.8,
-          }}
-        >
-          DATE: {state.date}
-        </span>
-        <span
-          style={{
-            background: "rgba(13,27,42,0.06)",
-            padding: "6px 16px",
-            borderRadius: 999,
-            fontWeight: 600,
-            opacity: 0.8,
-          }}
-        >
-          SOURCE: {state.source}
-        </span>
-      </div>
-
-      {/* COPYRIGHT — pinned to the very bottom of the card */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 18,
-          textAlign: "center",
-          fontSize: 18,
+          background: "rgba(13,27,42,0.06)",
+          padding: "8px 18px",
+          borderRadius: 999,
           fontWeight: 600,
-          opacity: 0.55,
+          opacity: 0.8,
         }}
       >
-        {config.copyright}
-      </div>
+        DATE: {state.date}
+      </span>
+      <span
+        style={{
+          background: "rgba(13,27,42,0.06)",
+          padding: "8px 18px",
+          borderRadius: 999,
+          fontWeight: 600,
+          opacity: 0.8,
+        }}
+      >
+        SOURCE: {state.source}
+      </span>
+    </div>
+
+    {/* COPYRIGHT — pinned to the very bottom of the card */}
+    <div
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 22,
+        textAlign: "center",
+        fontSize: 16,
+        fontWeight: 600,
+        opacity: 0.5,
+      }}
+    >
+      {config.copyright}
+    </div>
+
     </div>
   );
 }
@@ -225,6 +231,9 @@ function FactPanel({
   title,
   summary,
   watermarkImage,
+  imageOpacity,
+  imageBrightness,
+  imageBlur,
   stampSrc,
   stampPos,
   onStampMove,
@@ -245,7 +254,7 @@ function FactPanel({
         border: `1px solid ${accent}33`,
       }}
     >
-      {/* WATERMARK ARTICLE IMAGE (full-panel background) */}
+      {/* WATERMARK ARTICLE IMAGE (full-panel background, user-adjustable) */}
       {watermarkImage && (
         <div
           style={{
@@ -254,8 +263,8 @@ function FactPanel({
             backgroundImage: `url(${watermarkImage})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            opacity: 0.16,
-            filter: "grayscale(0.2)",
+            opacity: (imageOpacity ?? 60) / 100,
+            filter: `brightness(${(imageBrightness ?? 100) / 100}) blur(${imageBlur ?? 0}px)`,
             zIndex: 0,
           }}
         />
@@ -301,21 +310,43 @@ function FactPanel({
         <span>{eyebrow}</span>
       </div>
 
-      {/* CONTENT */}
-      <div style={{ position: "relative", zIndex: 1, marginTop: 16 }}>
-        <h2
-          style={{
-            fontSize: 32,
-            fontWeight: 700,
-            marginBottom: 16,
-            color: "#0d1b2a",
-            lineHeight: 1.25,
-          }}
-        >
-          {title}
-        </h2>
-        <p style={{ fontSize: 25, lineHeight: 1.55, color: "#1a1a1a" }}>{summary}</p>
-      </div>
+{/* CONTENT */}
+<div
+  style={{
+    position: "relative",
+    zIndex: 1,
+    marginTop: 16,
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  }}
+>
+  <h2
+    style={{
+      fontSize: 32,
+      fontWeight: 700,
+      marginBottom: 16,
+      color: "#0d1b2a",
+      lineHeight: 1.25,
+    }}
+  >
+    {title}
+  </h2>
+  <p
+    style={{
+      fontSize: 25,
+      lineHeight: 1.55,
+      color: "#1a1a1a",
+      display: "-webkit-box",
+      WebkitBoxOrient: "vertical",
+      WebkitLineClamp: 9,
+      overflow: "hidden",
+    }}
+  >
+    {summary}
+  </p>
+</div>
 
       <div
         style={{
@@ -333,8 +364,6 @@ function FactPanel({
 
 /* ============================================================
    DRAGGABLE STAMP
-   Position is stored as a % of the panel's width/height, so it
-   stays correct regardless of preview zoom/scale.
    ============================================================ */
 function DraggableStamp({ src, position, onPositionChange, size = 240 }) {
   const [pos, setPos] = useState(position || { x: 78, y: 14 });
@@ -394,7 +423,8 @@ function DraggableStamp({ src, position, onPositionChange, size = 240 }) {
 }
 
 /* ============================================================
-   VERDICT BLOCK (bottom row)
+   VERDICT BLOCK (kept for future use — currently unused
+   since the verdict row above is commented out)
    ============================================================ */
 function VerdictBlock({ verdictColor, verdictLabel, isFalse, caption }) {
   return (
