@@ -111,15 +111,17 @@ export async function postToFacebook(formData) {
   }
 }
 
-export async function generateFactCheck(rumorArticleUrl, factArticleUrl) {
+export async function generateFactCheck({ rumorArticleUrl, rumorArticleText, factArticleUrl, factArticleText }) {
   const response = await fetch(`${BASE_URL}/generate-factcheck`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      rumorArticleUrl,
-      factArticleUrl,
+      rumorArticleUrl: rumorArticleUrl || "",
+      rumorArticleText: rumorArticleText || "",
+      factArticleUrl: factArticleUrl || "",
+      factArticleText: factArticleText || "",
     }),
   });
 

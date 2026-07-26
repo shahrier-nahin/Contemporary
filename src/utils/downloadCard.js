@@ -7,7 +7,7 @@ async function renderCard(id = "export-card") {
   await document.fonts.ready;
 
   const canvas = await html2canvas(element, {
-    scale: 1.86,
+    scale: 2,
     useCORS: true,
     backgroundColor: null,
   });

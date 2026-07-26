@@ -385,6 +385,27 @@ ${data.content.substring(0, 5000)}
   };
 }
 
+
+// ==========================================================
+// Resolve a source: either scrape a URL, or use raw pasted text
+// ==========================================================
+async function resolveSource(url, text) {
+  if (text && text.trim().length > 0) {
+    return {
+      title: "",
+      content: text.trim(),
+      image: "",
+      source: ""
+    };
+  }
+
+  if (url && url.trim().length > 0) {
+    return await scrapeArticle(url.trim());
+  }
+
+  throw new Error("Provide either an article URL or article text");
+}
+
 // ==========================================================
 // Build messages for the combined fact-check AI call
 // ==========================================================
@@ -559,17 +580,25 @@ app.post("/generate-factcheck", async (req, res) => {
   }
 
   try {
-    const { rumorArticleUrl, factArticleUrl } = req.body;
+    const {
+      rumorArticleUrl,
+      rumorArticleText,
+      factArticleUrl,
+      factArticleText
+    } = req.body;
 
-    if (!rumorArticleUrl || !factArticleUrl) {
+    const hasRumorSource = (rumorArticleUrl && rumorArticleUrl.trim()) || (rumorArticleText && rumorArticleText.trim());
+    const hasFactSource = (factArticleUrl && factArticleUrl.trim()) || (factArticleText && factArticleText.trim());
+
+    if (!hasRumorSource || !hasFactSource) {
       return res.status(400).json({
-        error: "Both rumorArticleUrl and factArticleUrl are required"
+        error: "Provide either a URL or pasted text for both the rumor and fact sides"
       });
     }
 
     const [rumorData, factData] = await Promise.all([
-      scrapeArticle(rumorArticleUrl),
-      scrapeArticle(factArticleUrl)
+      resolveSource(rumorArticleUrl, rumorArticleText),
+      resolveSource(factArticleUrl, factArticleText)
     ]);
 
     const messages = buildFactCheckMessages(rumorData, factData);
@@ -597,7 +626,7 @@ app.post("/generate-factcheck", async (req, res) => {
       rumorImage: proxiedImage(rumorData.image),
       factImage: proxiedImage(factData.image),
       date: formatBanglaDate(),
-      source: factData.source,
+      source: factData.source || rumorData.source || "",
       remaining
     });
   } catch (error) {

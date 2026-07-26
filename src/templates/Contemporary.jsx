@@ -8,6 +8,12 @@ const VERDICT_TYPES = {
   "AI Generated": { color: "#6a4c93", label: "AI Generated" },
 };
 
+function alignToFlex(align) {
+  if (align === "left") return "flex-start";
+  if (align === "right") return "flex-end";
+  return "center";
+}
+
 export default function Contemporary({ state, setState }) {
   const config = TEMPLATE_CONFIG.contemporary;
   const rumorVerdict = VERDICT_TYPES[state.rumorVerdictType] || VERDICT_TYPES.Rumor;
@@ -17,6 +23,10 @@ export default function Contemporary({ state, setState }) {
 
   const rumorBadgePos = state.rumorBadgePos || { x: 78, y: 14 };
   const factBadgePos = state.factBadgePos || { x: 78, y: 14 };
+
+  const headlineAlign = state.headlineAlign || "center";
+  const rumorAlign = state.rumorAlign || "left";
+  const factAlign = state.factAlign || "left";
 
   function updateRumorBadgePos(pos) {
     setState && setState((prev) => ({ ...prev, rumorBadgePos: pos }));
@@ -35,13 +45,14 @@ export default function Contemporary({ state, setState }) {
         position: "relative",
         overflow: "hidden",
         background: "radial-gradient(circle at 15% 0%, #ffffff 0%, #f2f2f0 55%, #ebebe8 100%)",
-        fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', sans-serif",
+        fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif",
         color: "#111",
         display: "flex",
         flexDirection: "column",
         padding: "48px 64px 56px",
         boxSizing: "border-box",
-        boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.04)",
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
       }}
     >
       {/* TOP ACCENT STRIPE */}
@@ -56,26 +67,46 @@ export default function Contemporary({ state, setState }) {
         }}
       />
 
-{/* HEADER: LOGO */}
-<div
-  style={{
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    paddingBottom: 24,
-    borderBottom: "2px solid rgba(13,27,42,0.08)",
-  }}
->
-  <img
-    src={config.factCheckLogo}
-    alt="fact-check logo"
-    crossOrigin="anonymous"
-    style={{ height: 72, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" }}
-  />
-</div>
+      {/* HEADER: DATE (Left) & LOGO (Right) */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingBottom: 24,
+          borderBottom: "2px solid rgba(13,27,42,0.08)",
+        }}
+      >
+        <span
+          style={{
+            padding: "8px 18px",
+            fontWeight: 600,
+            fontSize: 20,
+            opacity: 0.8,
+          }}
+        >
+          {state.date}
+        </span>
+        <img
+          src={config.factCheckLogo}
+          alt="fact-check logo"
+          crossOrigin="anonymous"
+          style={{
+            height: 72,
+            transform: "scale(1.25)",
+            filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))",
+            transformOrigin: "center center",
+          }}
+        />
+      </div>
 
       {/* TITLE */}
-      <div style={{ textAlign: "center", margin: "34px 0 38px" }}>
+      <div
+        style={{
+          textAlign: headlineAlign,
+          margin: "34px 0 38px",
+        }}
+      >
         <h1
           style={{
             fontSize: 44,
@@ -84,30 +115,44 @@ export default function Contemporary({ state, setState }) {
             color: "#0d1b2a",
             lineHeight: 1.15,
             letterSpacing: "-0.5px",
+            textAlign: headlineAlign,
           }}
         >
           {state.headline}
         </h1>
         <div
           style={{
-            width: 120,
-            height: 6,
-            borderRadius: 6,
-            margin: "18px auto 0",
-            background: "linear-gradient(90deg, #e63946, #f77f00)",
+            display: "flex",
+            justifyContent: "center",
           }}
-        />
+        >
+          <div
+            style={{
+              width: 120,
+              height: 6,
+              borderRadius: 6,
+              marginTop: 18,
+              background: "linear-gradient(90deg, #e63946, #f77f00)",
+            }}
+          />
+        </div>
       </div>
 
       {/* TWO PANELS: RUMOR / FACT */}
-      <div style={{ display: "flex", gap: 28, flex: 1 }}>
+      <div style={{
+        display: "flex",
+        gap: 0,
+        flex: 1,
+        position: "relative",
+      }}>
+
         <FactPanel
-          gradient="linear-gradient(160deg, rgba(230,57,70,0.16) 0%, rgba(230,57,70,0.06) 100%)"
           accent="#e63946"
           eyebrowIcon="⚠"
           eyebrow="দাবীকৃত তথ্য"
           title={state.rumorTitle}
           summary={state.rumorSummary}
+          textAlign={rumorAlign}
           watermarkImage={state.rumorImage}
           imageOpacity={state.rumorImageOpacity ?? 60}
           imageBrightness={state.rumorImageBrightness ?? 100}
@@ -115,15 +160,18 @@ export default function Contemporary({ state, setState }) {
           stampSrc={rumorStamp}
           stampPos={rumorBadgePos}
           onStampMove={updateRumorBadgePos}
+          isLeft={true}
         />
 
+        <div style={{ width: 28, flexShrink: 0 }} />
+
         <FactPanel
-          gradient="linear-gradient(160deg, rgba(56,176,0,0.16) 0%, rgba(56,176,0,0.06) 100%)"
           accent="#2a9d3f"
           eyebrowIcon="✓"
           eyebrow="সত্যতা যাচাই"
           title={state.factTitle}
           summary={state.factSummary}
+          textAlign={factAlign}
           watermarkImage={state.factImage}
           imageOpacity={state.factImageOpacity ?? 60}
           imageBrightness={state.factImageBrightness ?? 100}
@@ -131,105 +179,65 @@ export default function Contemporary({ state, setState }) {
           stampSrc={factStamp}
           stampPos={factBadgePos}
           onStampMove={updateFactBadgePos}
+          isLeft={false}
         />
       </div>
 
-      {/* VERDICT ROW */}
-      {/* 
+      {/* FOOTER: SOURCE ONLY (Right aligned) */}
       <div
         style={{
           display: "flex",
-          gap: 28,
-          marginTop: 36,
-          padding: "26px 28px",
-          borderRadius: 18,
-          background: "linear-gradient(180deg, #ffffff 0%, #f7f7f5 100%)",
-          boxShadow: "0 4px 18px rgba(13,27,42,0.08)",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          marginTop: 34,
+          paddingTop: 22,
+          paddingBottom: 8,
+          borderTop: "2px solid rgba(13,27,42,0.08)",
         }}
       >
-        <VerdictBlock
-          verdictColor={rumorVerdict.color}
-          verdictLabel={rumorVerdict.label}
-          isFalse
-          caption={`Rumor: ${state.rumorLabel || ""}`}
-        />
-        <div style={{ width: 2, alignSelf: "stretch", background: "rgba(13,27,42,0.08)" }} />
-        <VerdictBlock
-          verdictColor="#2a9d3f"
-          verdictLabel="Fact Checked"
-          isFalse={false}
-          caption={`Fact: ${state.factLabel || ""}`}
-        />
-      </div> 
-      */}
+        <span
+          style={{
+            background: "rgba(13,27,42,0.06)",
+            padding: "8px 18px",
+            borderRadius: 999,
+            fontWeight: 600,
+            fontSize: 20,
+            opacity: 0.8,
+          }}
+        >
+          SOURCE: {state.source}
+        </span>
+      </div>
 
-    {/* FOOTER: DATE + SOURCE */}
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: 34,
-        paddingTop: 22,
-        paddingBottom: 8,
-        borderTop: "2px solid rgba(13,27,42,0.08)",
-        fontSize: 20,
-      }}
-    >
-      <span
+      {/* COPYRIGHT */}
+      <div
         style={{
-          background: "rgba(13,27,42,0.06)",
-          padding: "8px 18px",
-          borderRadius: 999,
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 22,
+          textAlign: "center",
+          fontSize: 16,
           fontWeight: 600,
-          opacity: 0.8,
+          opacity: 0.5,
         }}
       >
-        DATE: {state.date}
-      </span>
-      <span
-        style={{
-          background: "rgba(13,27,42,0.06)",
-          padding: "8px 18px",
-          borderRadius: 999,
-          fontWeight: 600,
-          opacity: 0.8,
-        }}
-      >
-        SOURCE: {state.source}
-      </span>
-    </div>
-
-    {/* COPYRIGHT — pinned to the very bottom of the card */}
-    <div
-      style={{
-        position: "absolute",
-        left: 0,
-        right: 0,
-        bottom: 22,
-        textAlign: "center",
-        fontSize: 16,
-        fontWeight: 600,
-        opacity: 0.5,
-      }}
-    >
-      {config.copyright}
-    </div>
-
+        {config.copyright}
+      </div>
     </div>
   );
 }
 
 /* ============================================================
-   FACT / RUMOR PANEL
+   FACT / RUMOR PANEL (IMPROVED LEGIBILITY & DESIGN)
    ============================================================ */
 function FactPanel({
-  gradient,
   accent,
   eyebrowIcon,
   eyebrow,
   title,
   summary,
+  textAlign,
   watermarkImage,
   imageOpacity,
   imageBrightness,
@@ -237,6 +245,7 @@ function FactPanel({
   stampSrc,
   stampPos,
   onStampMove,
+  isLeft,
 }) {
   return (
     <div
@@ -244,40 +253,45 @@ function FactPanel({
       style={{
         position: "relative",
         flex: 1,
-        borderRadius: 22,
+        borderRadius: "22px",
         overflow: "hidden",
-        background: gradient,
-        padding: 32,
+        backgroundColor: "#0d1b2a",
         display: "flex",
         flexDirection: "column",
-        boxShadow: "0 6px 20px rgba(13,27,42,0.10)",
-        border: `1px solid ${accent}33`,
+        boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+        border: `2px solid ${accent}`,
       }}
     >
-      {/* WATERMARK ARTICLE IMAGE (full-panel background, user-adjustable) */}
+      {/* WATERMARK ARTICLE IMAGE */}
       {watermarkImage && (
         <div
           style={{
             position: "absolute",
-            inset: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
             backgroundImage: `url(${watermarkImage})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            opacity: (imageOpacity ?? 60) / 100,
-            filter: `brightness(${(imageBrightness ?? 100) / 100}) blur(${imageBlur ?? 0}px)`,
+            opacity: (imageOpacity ?? 70) / 100,
+            filter: `brightness(${(imageBrightness ?? 90) / 100}) blur(${imageBlur ?? 0}px)`,
             zIndex: 0,
           }}
         />
       )}
 
-      {/* soft vignette so text stays readable over the watermark */}
+      {/* DARK GRADIENT OVERLAY (Guarantees contrast for all images) */}
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          background: "linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.05) 40%)",
-          zIndex: 0,
-          pointerEvents: "none",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
+          background:
+            "linear-gradient(180deg, rgba(13,27,42,0.15) 0%, rgba(13,27,42,0.55) 60%, rgba(13,27,42,0.7) 100%)",
+          zIndex: 1,
         }}
       />
 
@@ -286,76 +300,97 @@ function FactPanel({
         <DraggableStamp src={stampSrc} position={stampPos} onPositionChange={onStampMove} />
       )}
 
-      {/* EYEBROW CHIP */}
+      {/* TOP HEADER / EYEBROW CHIP */}
       <div
         style={{
           position: "relative",
-          zIndex: 1,
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          alignSelf: "flex-start",
-          background: accent,
-          color: "#fff",
-          fontSize: 18,
-          fontWeight: 800,
-          letterSpacing: 1,
-          padding: "6px 14px",
-          borderRadius: 999,
-          marginTop: 44,
-          boxShadow: "0 3px 10px rgba(0,0,0,0.18)",
+          zIndex: 2,
+          padding: "24px 24px 0",
         }}
       >
-        <span>{eyebrowIcon}</span>
-        <span>{eyebrow}</span>
+        <div
+          style={{
+            display: "inline-block",
+            background: accent,
+            color: "#fff",
+            fontSize: 20,
+            fontWeight: 800,
+            letterSpacing: 1,
+            padding: "8px 16px",
+            borderRadius: 999,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+            whiteSpace: "nowrap",
+            fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', sans-serif",
+          }}
+        >
+          <span style={{
+            fontSize: 22,
+            lineHeight: 1,
+            fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', sans-serif",
+          }}>
+            {eyebrowIcon}
+          </span>
+          <span style={{ marginLeft: 8 }}>{eyebrow}</span>
+        </div>
       </div>
 
-{/* CONTENT */}
-<div
-  style={{
-    position: "relative",
-    zIndex: 1,
-    marginTop: 16,
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
-  }}
->
-  <h2
-    style={{
-      fontSize: 32,
-      fontWeight: 700,
-      marginBottom: 16,
-      color: "#0d1b2a",
-      lineHeight: 1.25,
-    }}
-  >
-    {title}
-  </h2>
-  <p
-    style={{
-      fontSize: 25,
-      lineHeight: 1.55,
-      color: "#1a1a1a",
-      display: "-webkit-box",
-      WebkitBoxOrient: "vertical",
-      WebkitLineClamp: 9,
-      overflow: "hidden",
-    }}
-  >
-    {summary}
-  </p>
-</div>
+      {/* TEXT CONTENT CARD */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          marginTop: "auto",
+          margin: "16px",
+          padding: "22px 24px",
+          borderRadius: "16px",
+          background: "rgba(10, 20, 32, 0.85)",
+          border: "1px solid rgba(255, 255, 255, 0.12)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: 30,
+            fontWeight: 800,
+            color: "#ffffff",
+            lineHeight: 1.3,
+            margin: 0,
+            textAlign,
+            letterSpacing: "-0.2px",
+          }}
+        >
+          {title}
+        </h2>
+        <p
+          style={{
+            fontSize: 23,
+            lineHeight: 1.55,
+            color: "#e2e8f0",
+            margin: 0,
+            marginTop: 12,
+            textAlign,
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 7,
+            overflow: "hidden",
+            fontWeight: 400,
+          }}
+        >
+          {summary}
+        </p>
+      </div>
 
+      {/* LEFT ACCENT BAR */}
       <div
         style={{
           position: "absolute",
           top: 0,
           left: 0,
           bottom: 0,
-          width: 7,
+          width: 6,
           background: accent,
+          zIndex: 3,
         }}
       />
     </div>
@@ -365,7 +400,7 @@ function FactPanel({
 /* ============================================================
    DRAGGABLE STAMP
    ============================================================ */
-function DraggableStamp({ src, position, onPositionChange, size = 240 }) {
+function DraggableStamp({ src, position, onPositionChange, size = 220 }) {
   const [pos, setPos] = useState(position || { x: 78, y: 14 });
   const [dragging, setDragging] = useState(false);
 
@@ -416,48 +451,8 @@ function DraggableStamp({ src, position, onPositionChange, size = 240 }) {
         cursor: dragging ? "grabbing" : "grab",
         touchAction: "none",
         userSelect: "none",
-        filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.25))",
+        filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))",
       }}
     />
-  );
-}
-
-/* ============================================================
-   VERDICT BLOCK (kept for future use — currently unused
-   since the verdict row above is commented out)
-   ============================================================ */
-function VerdictBlock({ verdictColor, verdictLabel, isFalse, caption }) {
-  return (
-    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 18 }}>
-      <div
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: "50%",
-          background: `${verdictColor}1A`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        {isFalse ? (
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path d="M5 5L19 19M19 5L5 19" stroke={verdictColor} strokeWidth="3.5" strokeLinecap="round" />
-          </svg>
-        ) : (
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path d="M4 12.5L9.5 18L20 6" stroke={verdictColor} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </div>
-
-      <div>
-        <div style={{ fontSize: 30, fontWeight: 800, color: "#0d1b2a", lineHeight: 1.2 }}>
-          {verdictLabel}
-        </div>
-        <div style={{ fontSize: 20, marginTop: 4, opacity: 0.75 }}>{caption}</div>
-      </div>
-    </div>
   );
 }
