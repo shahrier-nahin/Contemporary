@@ -329,6 +329,31 @@ async function handleGenerate() {
         </select>
       </div>
 
+
+    <div className="group">
+      <label>Rumor Panel Text Position</label>
+      <select
+        className="editor-select"
+        value={state.rumorTextPosition || "bottom"}
+        onChange={(e) => update("rumorTextPosition", e.target.value)}
+      >
+        <option value="top">Top</option>
+        <option value="bottom">Bottom</option>
+      </select>
+    </div>
+
+    <div className="group">
+      <label>Fact Panel Text Position</label>
+      <select
+        className="editor-select"
+        value={state.factTextPosition || "bottom"}
+        onChange={(e) => update("factTextPosition", e.target.value)}
+      >
+        <option value="top">Top</option>
+        <option value="bottom">Bottom</option>
+      </select>
+    </div>
+
       
       {/* ========================= */}
       {/* RUMOR PANEL */}
@@ -351,12 +376,12 @@ async function handleGenerate() {
         <label>Rumor Panel Stamp</label>
         <select
           className="editor-select"
-          value={state.rumorVerdictType || "Rumor"}
+          value={state.rumorVerdictType || "Unverified"}
           onChange={(e) => update("rumorVerdictType", e.target.value)}
         >
-          <option value="Rumor">Rumor</option>
-          <option value="False">False</option>
-          <option value="Misleading">Misleading</option>
+          <option value="Unverified">Unverified</option>
+          <option value="Misinformation">Misinformation</option>
+          <option value="Disinformation">Disinformation</option>
           <option value="AI Generated">AI Generated</option>
         </select>
       </div>
@@ -428,6 +453,18 @@ async function handleGenerate() {
         }}
       >
         FACT PANEL
+      </div>
+
+      <div className="group">
+        <label>Fact Panel Stamp</label>
+        <select
+          className="editor-select"
+          value={state.factVerdictType || "Fact"}
+          onChange={(e) => update("factVerdictType", e.target.value)}
+        >
+          <option value="Verified">Verified</option>
+          <option value="Fact">Fact</option>
+        </select>
       </div>
 
       <div className="group">

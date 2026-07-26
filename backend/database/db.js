@@ -72,6 +72,7 @@ addColumnIfMissing("card_history", "fact_summary", "TEXT");
 addColumnIfMissing("card_history", "fact_article_url", "TEXT");
 addColumnIfMissing("card_history", "fact_image_url", "TEXT");
 addColumnIfMissing("card_history", "fact_label", "TEXT");
+addColumnIfMissing("card_history", "fact_verdict_type", "TEXT");
 
 console.log("SQLite database initialized.");
 

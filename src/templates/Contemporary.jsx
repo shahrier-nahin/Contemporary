@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { TEMPLATE_CONFIG } from "../config/templates";
 
-const VERDICT_TYPES = {
-  Rumor: { color: "#f77f00", label: "Rumor" },
-  False: { color: "#e63946", label: "False" },
-  Misleading: { color: "#d4a017", label: "Misleading" },
+const RUMOR_VERDICT_TYPES = {
+  Unverified: { color: "#f77f00", label: "Unverified" },
+  Misinformation: { color: "#e63946", label: "Misinformation" },
+  Disinformation: { color: "#b0202e", label: "Disinformation" },
   "AI Generated": { color: "#6a4c93", label: "AI Generated" },
+};
+
+const FACT_VERDICT_TYPES = {
+  Verified: { color: "#2a9d3f", label: "Verified" },
+  Fact: { color: "#1d7a30", label: "Fact" },
 };
 
 function alignToFlex(align) {
@@ -16,10 +21,10 @@ function alignToFlex(align) {
 
 export default function Contemporary({ state, setState }) {
   const config = TEMPLATE_CONFIG.contemporary;
-  const rumorVerdict = VERDICT_TYPES[state.rumorVerdictType] || VERDICT_TYPES.Rumor;
+  const rumorVerdict = RUMOR_VERDICT_TYPES[state.rumorVerdictType] || RUMOR_VERDICT_TYPES.Unverified;
 
-  const rumorStamp = config.stamps[state.rumorVerdictType] || config.stamps.Rumor;
-  const factStamp = config.stamps.Fact;
+  const rumorStamp = config.stamps[state.rumorVerdictType] || config.stamps.Unverified;
+  const factStamp = config.stamps[state.factVerdictType] || config.stamps.Fact;
 
   const rumorBadgePos = state.rumorBadgePos || { x: 78, y: 14 };
   const factBadgePos = state.factBadgePos || { x: 78, y: 14 };
@@ -153,6 +158,7 @@ export default function Contemporary({ state, setState }) {
           title={state.rumorTitle}
           summary={state.rumorSummary}
           textAlign={rumorAlign}
+          textPosition={state.rumorTextPosition || "bottom"}
           watermarkImage={state.rumorImage}
           imageOpacity={state.rumorImageOpacity ?? 60}
           imageBrightness={state.rumorImageBrightness ?? 100}
@@ -172,6 +178,7 @@ export default function Contemporary({ state, setState }) {
           title={state.factTitle}
           summary={state.factSummary}
           textAlign={factAlign}
+          textPosition={state.factTextPosition || "bottom"}
           watermarkImage={state.factImage}
           imageOpacity={state.factImageOpacity ?? 60}
           imageBrightness={state.factImageBrightness ?? 100}
@@ -238,6 +245,7 @@ function FactPanel({
   title,
   summary,
   textAlign,
+  textPosition,
   watermarkImage,
   imageOpacity,
   imageBrightness,
@@ -339,8 +347,9 @@ function FactPanel({
         style={{
           position: "relative",
           zIndex: 2,
-          marginTop: "auto",
           margin: "16px",
+          marginTop: textPosition === "top" ? 16 : "auto",
+          marginBottom: textPosition === "top" ? "auto" : 16,
           padding: "22px 24px",
           borderRadius: "16px",
           background: "rgba(10, 20, 32, 0.85)",
