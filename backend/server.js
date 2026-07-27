@@ -59,7 +59,7 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 
-const DAILY_LIMIT = 100;
+const DAILY_LIMIT = 5;
 
 app.set("trust proxy", 1);
 

@@ -32,6 +32,7 @@ export default function Editor({ state, setState, onLogout }) {
         factTitle: merged.factTitle,
         factSummary: merged.factSummary,
         factArticleUrl: merged.factArticleUrl,
+        factVerdictType: merged.factVerdictType,
         factImage: merged.factImage,
         factLabel: merged.factLabel,
         source: merged.source,
@@ -71,24 +72,27 @@ async function handleGenerate() {
       factArticleText: state.factInputMode === "text" ? state.factArticleText : "",
     });
 
-    const updatedFields = {
-      headline: data.headline || state.headline,
-      rumorTitle: data.rumorTitle || state.rumorTitle,
-      rumorSummary: data.rumorSummary || state.rumorSummary,
-      rumorImage: data.rumorImage || state.rumorImage,
-      rumorArticleImage: data.rumorImage || state.rumorArticleImage,
-      factTitle: data.factTitle || state.factTitle,
-      factSummary: data.factSummary || state.factSummary,
-      factImage: data.factImage || state.factImage,
-      factArticleImage: data.factImage || state.factArticleImage,
-      facebookCaption: data.facebookCaption || state.facebookCaption,
-      hashtags: Array.isArray(data.hashtags)
-        ? data.hashtags.join(" ")
-        : state.hashtags,
-      source: data.source || state.source,
-      date: data.date || state.date,
-      remaining: data.remaining ?? state.remaining,
-    };
+const rumorIsTextMode = state.rumorInputMode === "text";
+const factIsTextMode = state.factInputMode === "text";
+
+const updatedFields = {
+  headline: data.headline || state.headline,
+  rumorTitle: data.rumorTitle || state.rumorTitle,
+  rumorSummary: data.rumorSummary || state.rumorSummary,
+  rumorImage: rumorIsTextMode ? data.rumorImage || "" : data.rumorImage || state.rumorImage,
+  rumorArticleImage: rumorIsTextMode ? data.rumorImage || "" : data.rumorImage || state.rumorArticleImage,
+  factTitle: data.factTitle || state.factTitle,
+  factSummary: data.factSummary || state.factSummary,
+  factImage: factIsTextMode ? data.factImage || "" : data.factImage || state.factImage,
+  factArticleImage: factIsTextMode ? data.factImage || "" : data.factImage || state.factArticleImage,
+  facebookCaption: data.facebookCaption || state.facebookCaption,
+  hashtags: Array.isArray(data.hashtags)
+    ? data.hashtags.join(" ")
+    : state.hashtags,
+  source: data.source || state.source,
+  date: data.date || state.date,
+  remaining: data.remaining ?? state.remaining,
+};
 
     setState((prev) => ({ ...prev, ...updatedFields }));
 
@@ -621,6 +625,7 @@ async function handleGenerate() {
             factImage: card.fact_image_url || "",
             factArticleImage: card.fact_image_url || "",
             factLabel: card.fact_label || "",
+            factVerdictType: card.fact_verdict_type || "Fact",
 
             source: card.source || prev.source,
           }));

@@ -48,7 +48,7 @@ export default function App() {
     backgroundPosition: "center",
 
     // Daily Limit
-    dailyLimit: 14,
+    dailyLimit: 5,
     
 
   });
@@ -133,6 +133,7 @@ function handleLogout() {
 
       <Preview
         state={state}
+        setState={setState} 
       />
 
     </div>

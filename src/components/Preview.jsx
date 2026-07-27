@@ -8,10 +8,9 @@ export default function Preview({ state, setState }) {
 
   useEffect(() => {
     function updateScale() {
-      // Adjust preview container padding/sidebar width dynamically
       const sidebarWidth = window.innerWidth <= 768 ? 32 : 400;
       const availableWidth = window.innerWidth - sidebarWidth;
-      const cardWidth = 1080; // template base width
+      const cardWidth = 1080;
 
       const newScale = Math.min(availableWidth / cardWidth, 0.62);
       setScale(Math.max(newScale, 0.25));
@@ -51,19 +50,16 @@ export default function Preview({ state, setState }) {
         flexDirection: "column",
         alignItems: "center",
         width: "100%",
-        maxHeight: "100vh",     // Restricts height to viewport
-        overflowY: "auto",      // Enables vertical scrollbar on the right side
+        maxHeight: "100vh",
+        overflowY: "auto",
         padding: "20px 10px",
         boxSizing: "border-box",
       }}
     >
-      {/* 
-        Container wrapper to collapse extra whitespace caused by CSS scale transform 
-      */}
       <div
         style={{
           width: 1080 * scale,
-          height: 1350 * scale, // Adjust if base card height is different
+          height: 1350 * scale,
           position: "relative",
           marginBottom: "20px",
           flexShrink: 0,
@@ -92,7 +88,7 @@ export default function Preview({ state, setState }) {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          gap: "12px",
+          gap: "14px",
           width: "100%",
           maxWidth: `${Math.min(1080 * scale, 500)}px`,
           paddingBottom: "16px",
@@ -100,33 +96,41 @@ export default function Preview({ state, setState }) {
           flexShrink: 0,
         }}
       >
+        {/* PRIMARY ACTION */}
         <button
           className="download-btn"
           onClick={() => downloadCard("export-card")}
-          style={buttonStyle}
+          style={primaryButtonStyle}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
         >
-          <img
-            src="https://cdn-icons-png.flaticon.com/512/724/724933.png"
-            alt="download"
-            style={{
-              width: "18px",
-              height: "18px",
-              filter: "invert(1)",
-            }}
-          />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"
+              stroke="#ffffff"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
           Download PNG
         </button>
 
+        {/* SECONDARY ACTION */}
         <button
           className="facebook-btn"
           onClick={handleFacebookPost}
-          style={buttonStyle}
+          style={secondaryButtonStyle}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
         >
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg"
-            alt="Facebook"
-            style={{ width: "18px", height: "18px", filter: "brightness(0) invert(1)" }}
-          />
+          {/* Official Facebook "f" mark, single-color, no destructive filter */}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 8.5h2.5V5.2c-.43-.06-1.93-.2-3.68-.2-3.64 0-6.14 2.29-6.14 6.49v3.01H4.5V18h3.18v10h3.87V18h3.06l.5-3.5h-3.56v-2.63c0-1.02.28-1.72 1.75-1.72z"
+              fill="#ffffff"
+            />
+          </svg>
           Post to Facebook
         </button>
       </div>
@@ -134,20 +138,33 @@ export default function Preview({ state, setState }) {
   );
 }
 
-const buttonStyle = {
+const baseButtonStyle = {
   flex: 1,
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   gap: "8px",
+  border: "none",
+  borderRadius: "10px",
+  padding: "12px 18px",
+  fontSize: "14px",
+  fontWeight: "700",
+  letterSpacing: "0.2px",
+  cursor: "pointer",
+  transition: "transform 0.15s ease, box-shadow 0.15s ease",
+  whiteSpace: "nowrap",
+};
+
+const primaryButtonStyle = {
+  ...baseButtonStyle,
+  background: "linear-gradient(135deg, #e63946 0%, #f77f00 100%)",
+  color: "#ffffff",
+  boxShadow: "0 4px 14px rgba(230, 57, 70, 0.35)",
+};
+
+const secondaryButtonStyle = {
+  ...baseButtonStyle,
   backgroundColor: "#1877F2",
   color: "#ffffff",
-  border: "none",
-  borderRadius: "8px",
-  padding: "10px 16px",
-  fontSize: "14px",
-  fontWeight: "600",
-  cursor: "pointer",
-  transition: "background-color 0.2s ease",
-  whiteSpace: "nowrap",
+  boxShadow: "0 4px 14px rgba(24, 119, 242, 0.35)",
 };

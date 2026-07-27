@@ -22,8 +22,9 @@ function alignToFlex(align) {
 export default function Contemporary({ state, setState }) {
   const config = TEMPLATE_CONFIG.contemporary;
   const rumorVerdict = RUMOR_VERDICT_TYPES[state.rumorVerdictType] || RUMOR_VERDICT_TYPES.Unverified;
+  const factVerdict = FACT_VERDICT_TYPES[state.factVerdictType] || FACT_VERDICT_TYPES.Fact;
 
-  const rumorStamp = config.stamps[state.rumorVerdictType] || config.stamps.Unverified;
+  const rumorStamp = config.stamps[state.rumorVerdictType] || config.stamps.Misinformation;
   const factStamp = config.stamps[state.factVerdictType] || config.stamps.Fact;
 
   const rumorBadgePos = state.rumorBadgePos || { x: 78, y: 14 };
@@ -352,7 +353,9 @@ function FactPanel({
           marginBottom: textPosition === "top" ? "auto" : 16,
           padding: "22px 24px",
           borderRadius: "16px",
-          background: "rgba(10, 20, 32, 0.85)",
+          background: "rgba(10, 20, 32, 0.65)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
           border: "1px solid rgba(255, 255, 255, 0.12)",
           display: "flex",
           flexDirection: "column",
