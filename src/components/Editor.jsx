@@ -387,6 +387,7 @@ const updatedFields = {
           <option value="Misinformation">Misinformation</option>
           <option value="Disinformation">Disinformation</option>
           <option value="AI Generated">AI Generated</option>
+          <option value="Fake">Fake</option>
         </select>
       </div>
 

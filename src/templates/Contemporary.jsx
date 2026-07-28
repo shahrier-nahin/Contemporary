@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TEMPLATE_CONFIG } from "../config/templates";
 
 const RUMOR_VERDICT_TYPES = {
@@ -6,6 +6,7 @@ const RUMOR_VERDICT_TYPES = {
   Misinformation: { color: "#e63946", label: "Misinformation" },
   Disinformation: { color: "#b0202e", label: "Disinformation" },
   "AI Generated": { color: "#6a4c93", label: "AI Generated" },
+  Fake: { color: "#c1121f", label: "Fake" },
 };
 
 const FACT_VERDICT_TYPES = {
@@ -416,6 +417,14 @@ function DraggableStamp({ src, position, onPositionChange, size = 220 }) {
   const [pos, setPos] = useState(position || { x: 78, y: 14 });
   const [dragging, setDragging] = useState(false);
 
+  // Keep in sync when position changes externally (e.g. from the
+  // visible preview's drag being reflected into the hidden export copy)
+  useEffect(() => {
+    if (!dragging && position) {
+      setPos(position);
+    }
+  }, [position, dragging]);
+
   function handlePointerDown(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -443,11 +452,7 @@ function DraggableStamp({ src, position, onPositionChange, size = 220 }) {
   }
 
   return (
-    <img
-      src={src}
-      alt="verdict stamp"
-      crossOrigin="anonymous"
-      draggable={false}
+    <div
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -458,7 +463,10 @@ function DraggableStamp({ src, position, onPositionChange, size = 220 }) {
         transform: "translate(-50%, -50%)",
         width: size,
         height: size,
-        objectFit: "contain",
+        backgroundImage: `url(${src})`,
+        backgroundSize: "contain",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
         zIndex: 3,
         cursor: dragging ? "grabbing" : "grab",
         touchAction: "none",

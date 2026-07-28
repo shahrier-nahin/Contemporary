@@ -42,44 +42,61 @@ export default function Preview({ state, setState }) {
     }
   }
 
-  return (
+return (
+  <div
+    className="preview-scroll-container"
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      width: "100%",
+      maxHeight: "100vh",
+      overflowY: "auto",
+      padding: "20px 10px",
+      boxSizing: "border-box",
+    }}
+  >
+    {/* VISIBLE, SCALED PREVIEW — display only, never exported from */}
     <div
-      className="preview-scroll-container"
       style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        width: "100%",
-        maxHeight: "100vh",
-        overflowY: "auto",
-        padding: "20px 10px",
-        boxSizing: "border-box",
+        width: 1080 * scale,
+        height: 1350 * scale,
+        position: "relative",
+        marginBottom: "20px",
+        flexShrink: 0,
       }}
     >
       <div
+        className="preview-frame"
         style={{
-          width: 1080 * scale,
-          height: 1350 * scale,
-          position: "relative",
-          marginBottom: "20px",
-          flexShrink: 0,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+          width: "1080px",
+          position: "absolute",
+          top: 0,
+          left: 0,
         }}
       >
-        <div
-          id="export-card"
-          className="preview-frame"
-          style={{
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-            width: "1080px",
-            position: "absolute",
-            top: 0,
-            left: 0,
-          }}
-        >
-          <Contemporary state={state} setState={setState} />
-        </div>
+        <Contemporary state={state} setState={setState} />
       </div>
+    </div>
+
+    {/* HIDDEN, FULL-SIZE, UNSCALED COPY — this is what gets exported */}
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        left: "-99999px",
+        width: "1080px",
+        pointerEvents: "none",
+      }}
+      aria-hidden="true"
+    >
+      <div id="export-card">
+        <Contemporary state={state} setState={setState} />
+      </div>
+    </div>
+
 
       {/* Action Buttons */}
       <div
