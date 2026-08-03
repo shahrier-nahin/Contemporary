@@ -1,15 +1,9 @@
-const BASE_URL =
-  import.meta.env.MODE === "development"
-    ? "http://localhost:3000"
-    : import.meta.env.VITE_API_URL;
-
-    console.log("MODE:", import.meta.env.MODE);
-console.log("BASE_URL:", BASE_URL);
+import { API_URL as BASE_URL } from "../../../services/apiConfig";
 
 export async function getCardHistory() {
 
 const response = await fetch(
-  `${BASE_URL}/card-history`
+  `${BASE_URL}/card-history?appType=generator`
 );
 
   const data = await response.json();
@@ -49,7 +43,7 @@ export async function login(email, password) {
   return data;
 }
 
-export async function generateCard(articleUrl, panel) {
+export async function generateCard(articleUrl) {
   const response = await fetch(`${BASE_URL}/generate-card`, {
     method: "POST",
 
@@ -58,8 +52,7 @@ export async function generateCard(articleUrl, panel) {
     },
 
     body: JSON.stringify({
-      articleUrl,
-      panel,
+      articleUrl
     }),
   });
 
@@ -67,6 +60,22 @@ export async function generateCard(articleUrl, panel) {
 
   if (!response.ok) {
     throw new Error(data.error || "Backend error");
+  }
+
+  return data;
+}
+
+export async function saveCardHistory(payload) {
+  const response = await fetch(`${BASE_URL}/save-card-history`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...payload, appType: "generator" }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to save card");
   }
 
   return data;
@@ -109,45 +118,4 @@ export async function postToFacebook(formData) {
   } catch {
     throw new Error(text);
   }
-}
-
-export async function generateFactCheck({ rumorArticleUrl, rumorArticleText, factArticleUrl, factArticleText }) {
-  const response = await fetch(`${BASE_URL}/generate-factcheck`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      rumorArticleUrl: rumorArticleUrl || "",
-      rumorArticleText: rumorArticleText || "",
-      factArticleUrl: factArticleUrl || "",
-      factArticleText: factArticleText || "",
-    }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || "Backend error");
-  }
-
-  return data;
-}
-
-export async function saveCardHistory(payload) {
-  const response = await fetch(`${BASE_URL}/save-card-history`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || "Failed to save card");
-  }
-
-  return data;
 }

@@ -734,8 +734,17 @@ app.post("/save-card-history", (req, res) => {
       factArticleUrl,
       factImage,
       factLabel,
-      source
+      source,
+      summary,
+      hashtags,
+      articleUrl,
+      imageUrl,
+      appType
     } = req.body;
+
+    if (!["fact-checker", "generator"].includes(appType)) {
+      return res.status(400).json({ error: "Invalid app type" });
+    }
 
     if (id) {
       db.prepare(`
@@ -744,14 +753,14 @@ app.post("/save-card-history", (req, res) => {
           rumor_title = ?, rumor_summary = ?, rumor_article_url = ?, rumor_image_url = ?,
           rumor_verdict_type = ?, rumor_label = ?,
           fact_title = ?, fact_summary = ?, fact_article_url = ?, fact_image_url = ?, fact_label = ?,
-          source = ?
+          source = ?, summary = ?, hashtags = ?, article_url = ?, image_url = ?, app_type = ?
         WHERE id = ?
       `).run(
         headline || "",
         rumorTitle || "", rumorSummary || "", rumorArticleUrl || "", rumorImage || "",
         rumorVerdictType || "", rumorLabel || "",
         factTitle || "", factSummary || "", factArticleUrl || "", factImage || "", factLabel || "",
-        source || "",
+        source || "", summary || "", hashtags || "", articleUrl || "", imageUrl || "", appType,
         id
       );
 
@@ -763,16 +772,16 @@ app.post("/save-card-history", (req, res) => {
         user_email, headline,
         rumor_title, rumor_summary, rumor_article_url, rumor_image_url, rumor_verdict_type, rumor_label,
         fact_title, fact_summary, fact_article_url, fact_image_url, fact_label,
-        source, generated_at
+        source, summary, hashtags, article_url, image_url, app_type, generated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       ADMIN_EMAIL,
       headline || "",
       rumorTitle || "", rumorSummary || "", rumorArticleUrl || "", rumorImage || "",
       rumorVerdictType || "", rumorLabel || "",
       factTitle || "", factSummary || "", factArticleUrl || "", factImage || "", factLabel || "",
-      source || "",
+      source || "", summary || "", hashtags || "", articleUrl || "", imageUrl || "", appType,
       new Date().toISOString()
     );
 
@@ -867,11 +876,18 @@ app.post("/post-facebook", upload.single("image"), async (req, res) => {
 // =============================
 
 app.get("/card-history", (req, res) => {
+  const { appType } = req.query;
+
+  if (!["fact-checker", "generator"].includes(appType)) {
+    return res.status(400).json({ error: "Invalid app type" });
+  }
+
   const rows = db.prepare(`
     SELECT *
     FROM card_history
+    WHERE app_type = ?
     ORDER BY generated_at DESC
-  `).all();
+  `).all(appType);
 
   res.json(rows);
 });

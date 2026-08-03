@@ -1,143 +1,36 @@
-import { useEffect, useState } from "react";
-import { getRemaining } from "./services/api";
-import Editor from "./components/Editor";
-import Preview from "./components/Preview";
+import { useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
-
-import "./index.css";
+import Landing from "./pages/Landing";
+import FactCheckerApp from "./apps/factchecker/FactCheckerApp";
+import GeneratorApp from "./apps/generator/GeneratorApp";
 
 export default function App() {
-
   const [loggedIn, setLoggedIn] = useState(
     localStorage.getItem("loggedIn") === "true"
   );
 
-  const [state, setState] = useState({
-
-    // Template
-    template: "contemporary",
-
-    // Article
-    articleUrl: "",
-
-    // AI Content
-    headline: "আপনার শিরোনাম এখানে আসবে",
-    summary: "",
-    hashtags: "",
-
-    // Highlight
-    highlightWord: "",
-    highlightColor: "#E63946",
-
-    // Card Info
-    subcategory: "ফিফা বিশ্বকাপ",
-    source: "The Contemporary",
-
-    date: new Date().toLocaleDateString("bn-BD"),
-
-    remaining: 14,
-
-    // Background Images
-    background: null,
-    articleBackground: null,
-
-    // Background Controls
-    backgroundOpacity: 0.95,
-    backgroundBrightness: 1.15,
-    backgroundBlur: 0,
-    backgroundPosition: "center",
-
-    // Daily Limit
-    dailyLimit: 5,
-    
-
-  });
-
-  useEffect(() => {
-
-  async function loadRemaining() {
-
-    try {
-
-      const data = await getRemaining();
-
-      setState(prev => ({
-
-        ...prev,
-
-        remaining: data.remaining
-
-      }));
-
-    }
-
-    catch (err) {
-
-      console.error(
-        "Failed to load remaining:",
-        err
-      );
-
-    }
-
+  function handleLogin() {
+    setLoggedIn(true);
   }
 
-  if (loggedIn) {
-
-    loadRemaining();
-
-  }
-
-}, [loggedIn]);
-
-function handleLogin(loginData) {
-
-  setState(prev => ({
-    ...prev,
-    remaining: loginData.remaining
-  }));
-
-  setLoggedIn(true);
-
-}
-
-function handleLogout() {
-
-  localStorage.clear();
-
-  setLoggedIn(false);
-
-}
-
-  if (!loggedIn) {
-
-    return (
-
-      <Login
-        onLogin={handleLogin}
-      />
-
-    );
-
+  function handleLogout() {
+    localStorage.clear();
+    setLoggedIn(false);
   }
 
   return (
-
-    <div className="app-container">
-
-      <Editor
-        state={state}
-        setState={setState}
-        onLogout={handleLogout}
-      />
-
-      <Preview
-        state={state}
-        setState={setState} 
-      />
-
-    </div>
-
+    <BrowserRouter>
+      {!loggedIn ? (
+        <Login onLogin={handleLogin} />
+      ) : (
+        <Routes>
+          <Route path="/" element={<Landing onLogout={handleLogout} />} />
+          <Route path="/fact-checker" element={<FactCheckerApp onLogout={handleLogout} />} />
+          <Route path="/generator" element={<GeneratorApp onLogout={handleLogout} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      )}
+    </BrowserRouter>
   );
-
 }

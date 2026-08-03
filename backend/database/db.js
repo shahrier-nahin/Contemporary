@@ -73,6 +73,18 @@ addColumnIfMissing("card_history", "fact_article_url", "TEXT");
 addColumnIfMissing("card_history", "fact_image_url", "TEXT");
 addColumnIfMissing("card_history", "fact_label", "TEXT");
 addColumnIfMissing("card_history", "fact_verdict_type", "TEXT");
+addColumnIfMissing("card_history", "app_type", "TEXT");
+
+// Categorize history that existed before both apps were combined.
+db.prepare(`
+  UPDATE card_history
+  SET app_type = CASE
+    WHEN COALESCE(rumor_title, '') <> '' OR COALESCE(fact_title, '') <> ''
+      THEN 'fact-checker'
+    ELSE 'generator'
+  END
+  WHERE app_type IS NULL OR app_type = ''
+`).run();
 
 console.log("SQLite database initialized.");
 
