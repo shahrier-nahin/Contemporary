@@ -283,10 +283,14 @@ let image =
   $("img").first().attr("data-src") ||
   "";
 
-  if (image && image.startsWith("/")) {
-    const base = new URL(cleanUrl).origin;
-    image = base + image;
-  }
+console.log("IMAGE FOUND:", image || "(none)");
+console.log("og:image tag:", $('meta[property="og:image"]').attr("content"));
+console.log("HTML length received:", html.length);
+
+if (image && image.startsWith("/")) {
+  const base = new URL(cleanUrl).origin;
+  image = base + image;
+}
 
   const source = new URL(cleanUrl).hostname.replace("www.", "");
 
