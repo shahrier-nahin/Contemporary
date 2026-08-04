@@ -85,6 +85,7 @@ export default function Editor({ state, setState, onLogout }) {
         articleUrl: state.articleUrl,
         imageUrl: updatedFields.background,
         source: updatedFields.source,
+        appType: "generator",
       });
 
       setState((prev) => ({

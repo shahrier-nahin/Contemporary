@@ -59,7 +59,7 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 
-const DAILY_LIMIT = 5;
+const DAILY_LIMIT = 50;
 
 app.set("trust proxy", 1);
 
@@ -254,25 +254,24 @@ function proxiedImage(image) {
 // ==========================================================
 async function scrapeArticle(articleUrl) {
   const cleanUrl = articleUrl.split("#")[0];
-
-  console.log("Fetching:", cleanUrl);
-
   const response = await axios.get(cleanUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-    },
+    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
     timeout: 15000
   });
 
   const html = response.data;
   const $ = cheerio.load(html);
 
-  const title = $("h1").first().text().trim();
+  const title =
+    $("h1").first().text().trim() ||
+    $('meta[property="og:title"]').attr("content") ||
+    $("title").text().trim() ||
+    "";
 
-  const content = $("article p")
-    .map((i, el) => $(el).text())
-    .get()
-    .join("\n\n");
+  let content = $("article p").map((i, el) => $(el).text()).get().join("\n\n");
+  if (!content || content.trim().length < 50) {
+    content = $("p").map((i, el) => $(el).text()).get().join("\n\n");
+  }
 
   let image =
     $('meta[property="og:image"]').attr("content") ||
@@ -286,9 +285,6 @@ async function scrapeArticle(articleUrl) {
   }
 
   const source = new URL(cleanUrl).hostname.replace("www.", "");
-
-  console.log("TITLE:", title);
-  console.log("IMAGE:", image);
 
   return { title, content, image, source };
 }
@@ -678,11 +674,7 @@ app.post("/generate-card", async (req, res) => {
       });
     }
 
-    if (!panel || !["rumor", "fact"].includes(panel)) {
-      return res.status(400).json({
-        error: "panel must be 'rumor' or 'fact'"
-      });
-    }
+
 
     const result = await scrapeAndGenerate(articleUrl);
 
