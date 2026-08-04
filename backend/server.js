@@ -273,11 +273,15 @@ async function scrapeArticle(articleUrl) {
     content = $("p").map((i, el) => $(el).text()).get().join("\n\n");
   }
 
-  let image =
-    $('meta[property="og:image"]').attr("content") ||
-    $('meta[name="twitter:image"]').attr("content") ||
-    $("article img").first().attr("src") ||
-    "";
+let image =
+  $('meta[property="og:image"]').attr("content") ||
+  $('meta[name="twitter:image"]').attr("content") ||
+  $('meta[property="og:image:url"]').attr("content") ||
+  $("article img").first().attr("src") ||
+  $("article img").first().attr("data-src") ||
+  $("img").first().attr("src") ||
+  $("img").first().attr("data-src") ||
+  "";
 
   if (image && image.startsWith("/")) {
     const base = new URL(cleanUrl).origin;
