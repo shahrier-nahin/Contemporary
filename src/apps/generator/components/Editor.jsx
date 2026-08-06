@@ -119,7 +119,7 @@ export default function Editor({ state, setState, onLogout }) {
           textAlign: "center",
         }}
       >
-        Remaining Today: {state.remaining} / 14
+        Remaining Today: {state.remaining} / {state.dailyLimit}
       </div>
 
       <div className="group">

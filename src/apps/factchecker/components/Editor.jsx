@@ -148,7 +148,7 @@ const updatedFields = {
           textAlign: "center",
         }}
       >
-        Remaining Today: {state.remaining} / {state.dailyLimit || 100}
+        Remaining Today: {state.remaining} / {state.dailyLimit}
       </div>
 
       <div className="group">
@@ -388,6 +388,7 @@ const updatedFields = {
           <option value="Disinformation">Disinformation</option>
           <option value="AI Generated">AI Generated</option>
           <option value="Fake">Fake</option>
+          <option value="Myth">Myth</option>
         </select>
       </div>
 
@@ -469,6 +470,7 @@ const updatedFields = {
         >
           <option value="Verified">Verified</option>
           <option value="Fact">Fact</option>
+          <option value="Mythbuster">Mythbuster</option>
         </select>
       </div>
 

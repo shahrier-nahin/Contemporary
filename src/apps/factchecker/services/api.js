@@ -68,9 +68,7 @@ export async function generateCard(articleUrl, panel) {
 
 export async function getRemaining() {
 
-const response = await fetch(
-  `${BASE_URL}/remaining`
-);
+const response = await fetch(`${BASE_URL}/remaining?appType=fact-checker`);
 
   const data = await response.json();
 

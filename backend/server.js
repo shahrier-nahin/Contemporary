@@ -59,7 +59,10 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 
-const DAILY_LIMIT = 50;
+const DAILY_LIMITS = {
+  "fact-checker": 3,
+  "generator": 11,
+};
 
 app.set("trust proxy", 1);
 
@@ -116,6 +119,40 @@ console.log("FACEBOOK_PAGE_ACCESS_TOKEN exists:", !!process.env.FACEBOOK_PAGE_AC
 console.log("Loaded env keys:", Object.keys(process.env).filter(k => k.startsWith("FACEBOOK")));
 console.log("GROQ_API_KEY exists:", !!process.env.GROQ_API_KEY);
 
+// ==========================================================
+// SHARED: per-app daily usage helpers
+// ==========================================================
+function getAppType(value) {
+  return value === "generator" ? "generator" : "fact-checker";
+}
+
+function getUsage(today, appType) {
+  let usage = db.prepare(`
+    SELECT * FROM daily_usage WHERE usage_date = ? AND app_type = ?
+  `).get(today, appType);
+
+  if (!usage) {
+    db.prepare(`
+      INSERT INTO daily_usage (usage_date, app_type, count) VALUES (?, ?, ?)
+    `).run(today, appType, 0);
+    usage = { usage_date: today, app_type: appType, count: 0 };
+  }
+
+  return usage;
+}
+
+function incrementUsage(today, appType) {
+  db.prepare(`
+    UPDATE daily_usage SET count = count + 1 WHERE usage_date = ? AND app_type = ?
+  `).run(today, appType);
+
+  const updated = db.prepare(`
+    SELECT count FROM daily_usage WHERE usage_date = ? AND app_type = ?
+  `).get(today, appType);
+
+  return DAILY_LIMITS[appType] - updated.count;
+}
+
 // Test
 app.get("/", (req, res) => {
   res.send("Backend is running");
@@ -144,41 +181,28 @@ app.post("/login", (req, res) => {
     });
   }
 
-  const today = new Date().toISOString().split("T")[0];
-
-  const usage = db.prepare(`
-    SELECT count
-    FROM daily_usage
-    WHERE usage_date = ?
-  `).get(today);
-
-  const remaining = usage
-    ? DAILY_LIMIT - usage.count
-    : DAILY_LIMIT;
-
   return res.json({
     success: true,
-    email,
-    remaining
+    email
   });
 });
 
 // =============================
 // REMAINING DAILY LIMIT
+// Requires ?appType=fact-checker or ?appType=generator
 // =============================
 
 app.get("/remaining", (req, res) => {
+  const appType = getAppType(req.query.appType);
   const today = new Date().toISOString().split("T")[0];
 
   const usage = db.prepare(`
-    SELECT count
-    FROM daily_usage
-    WHERE usage_date = ?
-  `).get(today);
+    SELECT count FROM daily_usage WHERE usage_date = ? AND app_type = ?
+  `).get(today, appType);
 
   const remaining = usage
-    ? DAILY_LIMIT - usage.count
-    : DAILY_LIMIT;
+    ? DAILY_LIMITS[appType] - usage.count
+    : DAILY_LIMITS[appType];
 
   res.json({
     remaining
@@ -273,24 +297,24 @@ async function scrapeArticle(articleUrl) {
     content = $("p").map((i, el) => $(el).text()).get().join("\n\n");
   }
 
-let image =
-  $('meta[property="og:image"]').attr("content") ||
-  $('meta[name="twitter:image"]').attr("content") ||
-  $('meta[property="og:image:url"]').attr("content") ||
-  $("article img").first().attr("src") ||
-  $("article img").first().attr("data-src") ||
-  $("img").first().attr("src") ||
-  $("img").first().attr("data-src") ||
-  "";
+  let image =
+    $('meta[property="og:image"]').attr("content") ||
+    $('meta[name="twitter:image"]').attr("content") ||
+    $('meta[property="og:image:url"]').attr("content") ||
+    $("article img").first().attr("src") ||
+    $("article img").first().attr("data-src") ||
+    $("img").first().attr("src") ||
+    $("img").first().attr("data-src") ||
+    "";
 
-console.log("IMAGE FOUND:", image || "(none)");
-console.log("og:image tag:", $('meta[property="og:image"]').attr("content"));
-console.log("HTML length received:", html.length);
+  console.log("IMAGE FOUND:", image || "(none)");
+  console.log("og:image tag:", $('meta[property="og:image"]').attr("content"));
+  console.log("HTML length received:", html.length);
 
-if (image && image.startsWith("/")) {
-  const base = new URL(cleanUrl).origin;
-  image = base + image;
-}
+  if (image && image.startsWith("/")) {
+    const base = new URL(cleanUrl).origin;
+    image = base + image;
+  }
 
   const source = new URL(cleanUrl).hostname.replace("www.", "");
 
@@ -561,22 +585,15 @@ ${factData.content.substring(0, 4000)}
 // Body: { rumorArticleUrl, factArticleUrl }
 // Scrapes BOTH articles, runs ONE combined AI call, returns
 // everything needed for both panels + the shared headline.
+// Uses the "fact-checker" daily limit.
 // ==========================================================
 app.post("/generate-factcheck", async (req, res) => {
+  const appType = "fact-checker";
   const today = new Date().toISOString().split("T")[0];
 
-  let usage = db.prepare(`
-    SELECT * FROM daily_usage WHERE usage_date = ?
-  `).get(today);
+  const usage = getUsage(today, appType);
 
-  if (!usage) {
-    db.prepare(`
-      INSERT INTO daily_usage (usage_date, count) VALUES (?, ?)
-    `).run(today, 0);
-    usage = { usage_date: today, count: 0 };
-  }
-
-  if (usage.count >= DAILY_LIMIT) {
+  if (usage.count >= DAILY_LIMITS[appType]) {
     return res.status(429).json({
       error: "Daily limit reached.",
       remaining: 0
@@ -609,15 +626,7 @@ app.post("/generate-factcheck", async (req, res) => {
     const aiText = await callGroq(messages, 0.4);
     const aiData = JSON.parse(aiText);
 
-    db.prepare(`
-      UPDATE daily_usage SET count = count + 1 WHERE usage_date = ?
-    `).run(today);
-
-    const updatedUsage = db.prepare(`
-      SELECT count FROM daily_usage WHERE usage_date = ?
-    `).get(today);
-
-    const remaining = DAILY_LIMIT - updatedUsage.count;
+    const remaining = incrementUsage(today, appType);
 
     res.json({
       headline: aiData.headline,
@@ -641,32 +650,16 @@ app.post("/generate-factcheck", async (req, res) => {
 
 // ==========================================================
 // /generate-card  (LEGACY — single article, single panel)
-// Body: { articleUrl, panel }  — panel is "rumor" or "fact"
-// Kept for backward compatibility. Not used by the new
-// single-button combined flow.
+// Body: { articleUrl, panel }
+// Uses the "generator" daily limit.
 // ==========================================================
 app.post("/generate-card", async (req, res) => {
+  const appType = "generator";
   const today = new Date().toISOString().split("T")[0];
 
-  let usage = db.prepare(`
-    SELECT *
-    FROM daily_usage
-    WHERE usage_date = ?
-  `).get(today);
+  const usage = getUsage(today, appType);
 
-  if (!usage) {
-    db.prepare(`
-    INSERT INTO daily_usage (usage_date, count)
-    VALUES (?, ?)
-    `).run(today, 0);
-
-    usage = {
-      usage_date: today,
-      count: 0
-    };
-  }
-
-  if (usage.count >= DAILY_LIMIT) {
+  if (usage.count >= DAILY_LIMITS[appType]) {
     return res.status(429).json({
       error: "Daily limit reached.",
       remaining: 0
@@ -682,23 +675,9 @@ app.post("/generate-card", async (req, res) => {
       });
     }
 
-
-
     const result = await scrapeAndGenerate(articleUrl);
 
-    db.prepare(`
-    UPDATE daily_usage
-    SET count = count + 1
-    WHERE usage_date = ?
-    `).run(today);
-
-    const updatedUsage = db.prepare(`
-    SELECT count
-    FROM daily_usage
-    WHERE usage_date = ?
-    `).get(today);
-
-    const remaining = DAILY_LIMIT - updatedUsage.count;
+    const remaining = incrementUsage(today, appType);
 
     res.json({
       ...result,
@@ -818,10 +797,6 @@ app.post("/post-facebook", upload.single("image"), async (req, res) => {
     console.log("Image Name:", image.originalname);
     console.log("Image Size:", image.size);
     console.log("Image Type:", image.mimetype);
-
-    // ================================
-    // 🚀 SEND TO FACEBOOK
-    // ================================
 
     console.log("🚀 Posting to Facebook...");
     console.log("PAGE ID:", process.env.FACEBOOK_PAGE_ID);

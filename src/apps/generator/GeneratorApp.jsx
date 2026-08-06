@@ -4,6 +4,16 @@ import { getRemaining } from "./services/api";
 import Editor from "./components/Editor";
 import Preview from "./components/Preview";
 
+function formatBanglaDate() {
+  const date = new Date();
+  const banglaMonths = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+  const banglaDigits = {"0":"০","1":"১","2":"২","3":"৩","4":"৪","5":"৫","6":"৬","7":"৭","8":"৮","9":"৯"};
+  function convertToBanglaNumber(number) {
+    return String(number).split("").map(d => banglaDigits[d]).join("");
+  }
+  return `${convertToBanglaNumber(date.getDate())} ${banglaMonths[date.getMonth()]} ${convertToBanglaNumber(date.getFullYear())}`;
+}
+
 export default function GeneratorApp({onLogout}) {
   const [state, setState] = useState({
     template: "contemporary",
@@ -15,15 +25,15 @@ export default function GeneratorApp({onLogout}) {
     highlightColor: "#E63946",
     subcategory: "ফিফা বিশ্বকাপ",
     source: "The Contemporary",
-    date: new Date().toLocaleDateString("bn-BD"),
-    remaining: 14,
+    date: formatBanglaDate(),
+    remaining: 11,
+    dailyLimit: 11,
     background: null,
     articleBackground: null,
     backgroundOpacity: 0.95,
     backgroundBrightness: 1.15,
     backgroundBlur: 0,
     backgroundPosition: "center",
-    dailyLimit: 14,
   });
 
   useEffect(() => {

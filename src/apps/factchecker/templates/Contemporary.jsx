@@ -7,11 +7,13 @@ const RUMOR_VERDICT_TYPES = {
   Disinformation: { color: "#b0202e", label: "Disinformation" },
   "AI Generated": { color: "#6a4c93", label: "AI Generated" },
   Fake: { color: "#c1121f", label: "Fake" },
+  Myth: { color: "#8e44ad", label: "Myth" },
 };
 
 const FACT_VERDICT_TYPES = {
   Verified: { color: "#2a9d3f", label: "Verified" },
   Fact: { color: "#1d7a30", label: "Fact" },
+  Mythbuster: { color: "#16a085", label: "Mythbuster" },
 };
 
 function alignToFlex(align) {
@@ -43,7 +45,7 @@ export default function Contemporary({ state, setState }) {
     setState && setState((prev) => ({ ...prev, factBadgePos: pos }));
   }
 
-  return (
+return (
     <div
       id="card"
       style={{
@@ -51,7 +53,17 @@ export default function Contemporary({ state, setState }) {
         height: "1350px",
         position: "relative",
         overflow: "hidden",
-        background: "radial-gradient(circle at 15% 0%, #ffffff 0%, #f2f2f0 55%, #ebebe8 100%)",
+        background: `
+          /* Wrinkle Highlights & Fold Lines */
+          linear-gradient(28deg, rgba(255, 255, 255, 0.18) 0%, transparent 20%, rgba(0, 0, 0, 0.22) 45%, rgba(255, 255, 255, 0.15) 50%, transparent 75%),
+          linear-gradient(162deg, transparent 20%, rgba(0, 0, 0, 0.25) 38%, rgba(255, 255, 255, 0.2) 42%, transparent 60%),
+          linear-gradient(75deg, rgba(0, 0, 0, 0.18) 15%, rgba(255, 255, 255, 0.12) 25%, transparent 50%, rgba(0, 0, 0, 0.2) 80%),
+          linear-gradient(195deg, rgba(255, 255, 255, 0.1) 0%, transparent 30%, rgba(0, 0, 0, 0.15) 70%, rgba(255, 255, 255, 0.08) 100%),
+          /* Vignette & Corner Shadows */
+          radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 40%, rgba(0, 0, 0, 0.35) 100%),
+          /* Base Red Gradient */
+          radial-gradient(circle at 15% 0%, #ff1e27 0%, #d20a11 55%, #9b0006 100%)
+        `,
         fontFamily: "'Hind Siliguri', 'Noto Sans Bengali', 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif",
         color: "#111",
         display: "flex",
@@ -81,19 +93,20 @@ export default function Contemporary({ state, setState }) {
           justifyContent: "space-between",
           alignItems: "center",
           paddingBottom: 24,
-          borderBottom: "2px solid rgba(13,27,42,0.08)",
+          borderBottom: "2px solid rgba(255,255,255,0.15)",
         }}
       >
-        <span
-          style={{
-            padding: "8px 18px",
-            fontWeight: 600,
-            fontSize: 20,
-            opacity: 0.8,
-          }}
-        >
-          {state.date}
-        </span>
+      <span
+        style={{
+          padding: "8px 18px",
+          fontWeight: 600,
+          fontSize: 22,
+          opacity: 0.95,
+          color: "#ffffff",
+        }}
+      >
+        {state.date}
+      </span>
         <img
           src={config.factCheckLogo}
           alt="fact-check logo"
@@ -119,10 +132,11 @@ export default function Contemporary({ state, setState }) {
             fontSize: 44,
             fontWeight: 800,
             margin: 0,
-            color: "#0d1b2a",
+            color: "#ffffff",
             lineHeight: 1.15,
             letterSpacing: "-0.5px",
             textAlign: headlineAlign,
+            textShadow: "0 2px 8px rgba(0,0,0,0.35)",
           }}
         >
           {state.headline}
@@ -193,44 +207,52 @@ export default function Contemporary({ state, setState }) {
       </div>
 
       {/* FOOTER: SOURCE ONLY (Right aligned) */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          marginTop: 34,
-          paddingTop: 22,
-          paddingBottom: 8,
-          borderTop: "2px solid rgba(13,27,42,0.08)",
-        }}
-      >
-        <span
-          style={{
-            background: "rgba(13,27,42,0.06)",
-            padding: "8px 18px",
-            borderRadius: 999,
-            fontWeight: 600,
-            fontSize: 20,
-            opacity: 0.8,
-          }}
-        >
-          SOURCE: {state.source}
-        </span>
-      </div>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 34,
+    paddingTop: 22,
+    paddingBottom: 8,
+    borderTop: "2px solid rgba(255,255,255,0.2)",
+  }}
+>
+<img
+  src="https://res.cloudinary.com/dqbsdtrfk/image/upload/v1781174665/news_desk_logos/contemporary_logo.png"
+  alt=""
+  crossOrigin="anonymous"
+  style={{ height: 65, marginTop: -20, marginBottom: -20 }}
+/>
+  <span
+    style={{
+      background: "rgba(255,255,255,0.15)",
+      padding: "8px 18px",
+      borderRadius: 999,
+      fontWeight: 600,
+      fontSize: 20,
+      color: "#ffffff",
+      opacity: 0.95,
+    }}
+  >
+    SOURCE: {state.source}
+  </span>
+</div>
 
       {/* COPYRIGHT */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 22,
-          textAlign: "center",
-          fontSize: 16,
-          fontWeight: 600,
-          opacity: 0.5,
-        }}
-      >
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 22,
+            textAlign: "center",
+            fontSize: 18,
+            fontWeight: 600,
+            color: "#ffffff",
+            opacity: 0.7,
+          }}
+        >
         {config.copyright}
       </div>
     </div>

@@ -7,9 +7,14 @@ const db = new Database(
 
 db.pragma("journal_mode = WAL");
 
-// ==========================
-// USERS
-// ==========================
+function addColumnIfMissing(table, column, definition) {
+  const existing = db.prepare(`PRAGMA table_info(${table})`).all();
+  const hasColumn = existing.some((col) => col.name === column);
+  if (!hasColumn) {
+    db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
+    console.log(`Added column ${column} to ${table}`);
+  }
+}
 
 db.prepare(`
 CREATE TABLE IF NOT EXISTS users (
@@ -19,22 +24,16 @@ CREATE TABLE IF NOT EXISTS users (
 )
 `).run();
 
-// ==========================
-// DAILY USAGE
-// ==========================
-
 db.prepare(`
 CREATE TABLE IF NOT EXISTS daily_usage (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    usage_date TEXT UNIQUE,
+    usage_date TEXT,
     count INTEGER DEFAULT 0
 )
 `).run();
 
-// ==========================
-// CARD HISTORY
-// ==========================
-// Base table kept for backward compatibility with old single-article rows.
+addColumnIfMissing("daily_usage", "app_type", "TEXT DEFAULT 'shared'");
+
 db.prepare(`
 CREATE TABLE IF NOT EXISTS card_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,24 +48,12 @@ CREATE TABLE IF NOT EXISTS card_history (
 )
 `).run();
 
-// Add the new rumor/fact columns to existing DBs without wiping data.
-// ALTER TABLE ADD COLUMN throws if the column already exists, so guard each one.
-function addColumnIfMissing(table, column, definition) {
-  const existing = db.prepare(`PRAGMA table_info(${table})`).all();
-  const hasColumn = existing.some((col) => col.name === column);
-  if (!hasColumn) {
-    db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
-    console.log(`Added column ${column} to ${table}`);
-  }
-}
-
 addColumnIfMissing("card_history", "rumor_title", "TEXT");
 addColumnIfMissing("card_history", "rumor_summary", "TEXT");
 addColumnIfMissing("card_history", "rumor_article_url", "TEXT");
 addColumnIfMissing("card_history", "rumor_image_url", "TEXT");
 addColumnIfMissing("card_history", "rumor_verdict_type", "TEXT");
 addColumnIfMissing("card_history", "rumor_label", "TEXT");
-
 addColumnIfMissing("card_history", "fact_title", "TEXT");
 addColumnIfMissing("card_history", "fact_summary", "TEXT");
 addColumnIfMissing("card_history", "fact_article_url", "TEXT");
@@ -75,7 +62,6 @@ addColumnIfMissing("card_history", "fact_label", "TEXT");
 addColumnIfMissing("card_history", "fact_verdict_type", "TEXT");
 addColumnIfMissing("card_history", "app_type", "TEXT");
 
-// Categorize history that existed before both apps were combined.
 db.prepare(`
   UPDATE card_history
   SET app_type = CASE

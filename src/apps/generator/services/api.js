@@ -83,9 +83,7 @@ export async function saveCardHistory(payload) {
 
 export async function getRemaining() {
 
-const response = await fetch(
-  `${BASE_URL}/remaining`
-);
+const response = await fetch(`${BASE_URL}/remaining?appType=generator`);
 
   const data = await response.json();
 
